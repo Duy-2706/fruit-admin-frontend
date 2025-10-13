@@ -25,8 +25,8 @@ const AdminNavigation: React.FC<AdminNavigationProps> = ({ activeSection }) => {
         description: 'Quản lý thông tin khách hàng'
       },
       banners: { 
-        title: 'Quản lý Banner', 
-        description: 'Quản lý các banner hiển thị trên website'
+        title: 'Danh sách Banner', 
+        description: 'Danh sách các banner hiển thị trên website'
       },
       reports: { 
         title: 'Báo cáo thống kê', 
@@ -41,7 +41,7 @@ const AdminNavigation: React.FC<AdminNavigationProps> = ({ activeSection }) => {
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-3">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="text-sm font-normal text-gray-900">
           {sectionInfo.title}
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">

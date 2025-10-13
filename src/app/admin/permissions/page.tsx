@@ -1,29 +1,26 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import CustomTable from '@/components/ui/CustomTable';
-import BannerModal from '@/components/pages/BannerModel';
+import PermissionModal from '@/components/pages/PermissionModel';
 import { ApiHelper } from '@/utils/api';
 import { AuthUtils } from '@/utils/auth';
-import { Banner, CreateBannerRequest } from '@/types/banner';
+import { Permission, CreatePermissionRequest } from '@/types/permission';
 
-export default function BannerManagementPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
+export default function PermissionManagementPage() {
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
-  const [formData, setFormData] = useState<CreateBannerRequest>({
-    title: '',
-    image: '',
-    link: '',
-    position: 'homepage-main',
-    sort_order: 0,
-    is_active: true
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [formData, setFormData] = useState<CreatePermissionRequest>({
+    name: '',
+    slug: '',
+    description: null
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
 
-  const fetchBanners = async () => {
+  const fetchPermissions = async () => {
     setLoading(true);
     try {
       if (!AuthUtils.isAuthenticated()) {
@@ -32,25 +29,25 @@ export default function BannerManagementPage() {
         return;
       }
 
-      const response = await ApiHelper.get<Banner[]>('api/v1/banners/manage');
+      const response = await ApiHelper.get<Permission[]>('api/v1/permissions');
       
       if (response.success && response.data) {
-        const bannersData = Array.isArray(response.data) ? response.data : [];
-        setBanners(bannersData);
+        const permissionsData = Array.isArray(response.data) ? response.data : [];
+        setPermissions(permissionsData);
       } else {
-        console.error('Error fetching banners:', response.message);
-        alert(response.message || 'Không thể tải dữ liệu banner');
+        console.error('Error fetching permissions:', response.message);
+        alert(response.message || 'Không thể tải dữ liệu quyền hạn');
       }
     } catch (error) {
-      console.error('Error fetching banners:', error);
-      alert('Lỗi khi tải banner');
+      console.error('Error fetching permissions:', error);
+      alert('Lỗi khi tải quyền hạn');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBanners();
+    fetchPermissions();
   }, []);
 
   const columns = [
@@ -61,64 +58,27 @@ export default function BannerManagementPage() {
       sortable: true,
       className: 'text-center'
     },
-    {
-      key: 'image',
-      label: 'HÌNH ẢNH',
-      width: '120px',
-      sortable: false,
+    { 
+      key: 'name', 
+      label: 'TÊN QUYỀN HẠN',
+      sortable: true,
+      className: 'text-center'
+    },
+    { 
+      key: 'slug', 
+      label: 'SLUG',
+      sortable: true,
       render: (value: string) => (
-        <img 
-          src={value} 
-          alt="Banner" 
-          className="w-20 h-12 object-cover rounded mx-auto"
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder-image.png';
-          }}
-        />
+        <span className="font-mono text-sm text-gray-600">{value}</span>
       ),
       className: 'text-center'
     },
     { 
-      key: 'title', 
-      label: 'TIÊU ĐỀ',
-      sortable: true,
-      className: 'text-center'
-    },
-    { 
-      key: 'position', 
-      label: 'VỊ TRÍ',
-      width: '150px',
-      sortable: true,
-      render: (value: string) => {
-        const positionMap: Record<string, string> = {
-          'homepage-main': 'Trang chủ - Chính',
-          'homepage-sidebar': 'Trang chủ - Sidebar',
-          'category-top': 'Danh mục - Top',
-        };
-        return positionMap[value] || value;
-      },
-      className: 'text-center'
-    },
-    { 
-      key: 'sort_order', 
-      label: 'THỨ TỰ',
-      width: '80px',
-      sortable: true,
-      className: 'text-center'
-    },
-    {
-      key: 'is_active',
-      label: 'TRẠNG THÁI',
-      width: '120px',
-      sortable: true,
-      render: (value: boolean) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-gray-100 text-gray-800'
-        }`}>
-          {value ? 'Hoạt động' : 'Tạm dừng'}
-        </span>
+      key: 'description', 
+      label: 'MÔ TẢ',
+      sortable: false,
+      render: (value: string | null) => (
+        <span className="text-gray-600 text-sm">{value || '-'}</span>
       ),
       className: 'text-center'
     },
@@ -134,7 +94,7 @@ export default function BannerManagementPage() {
       label: 'THAO TÁC',
       width: '120px',
       sortable: false,
-      render: (_value: any, row: Banner) => (
+      render: (_value: any, row: Permission) => (
         <div className="flex justify-center space-x-2">
           <button
             onClick={(e) => {
@@ -168,44 +128,39 @@ export default function BannerManagementPage() {
     }
   ];
 
-  const handleEdit = (banner: Banner) => {
-    if (!banner || !banner.id) {
-      console.error('Invalid banner data:', banner);
-      alert('Dữ liệu banner không hợp lệ');
+  const handleEdit = (permission: Permission) => {
+    if (!permission || !permission.id) {
+      console.error('Invalid permission data:', permission);
+      alert('Dữ liệu quyền hạn không hợp lệ');
       return;
     }
     
-    console.log('Editing banner:', banner);
-    setEditingBanner(banner);
+    console.log('Editing permission:', permission);
+    setEditingPermission(permission);
     setFormData({
-      title: banner.title || '',
-      image: banner.image || '',
-      link: banner.link || '',
-      position: banner.position || 'homepage-main',
-      sort_order: banner.sort_order || 0,
-      is_active: banner.is_active ?? true,
-      start_date: banner.start_date,
-      end_date: banner.end_date
+      name: permission.name || '',
+      slug: permission.slug || '',
+      description: permission.description || null
     });
     setShowModal(true);
   };
 
-  const handleDelete = async (banner: Banner) => {
-    if (!banner || !banner.id) {
-      console.error('Invalid banner data:', banner);
-      alert('Dữ liệu banner không hợp lệ');
+  const handleDelete = async (permission: Permission) => {
+    if (!permission || !permission.id) {
+      console.error('Invalid permission data:', permission);
+      alert('Dữ liệu quyền hạn không hợp lệ');
       return;
     }
     
-    if (!confirm(`Bạn có chắc muốn xóa banner "${banner.title}"?`)) return;
+    if (!confirm(`Bạn có chắc muốn xóa quyền hạn "${permission.name}"?`)) return;
 
     try {
-      const response = await ApiHelper.delete(`api/v1/banners/manage/${banner.id}`);
+      const response = await ApiHelper.delete(`api/v1/permissions/${permission.id}`);
       if (response.success) {
-        alert('Xóa banner thành công!');
-        fetchBanners();
+        alert('Xóa quyền hạn thành công!');
+        fetchPermissions();
       } else {
-        alert('Lỗi: ' + (response.message || 'Không thể xóa banner'));
+        alert('Lỗi: ' + (response.message || 'Không thể xóa quyền hạn'));
       }
     } catch (error: any) {
       console.error('Delete error:', error);
@@ -218,53 +173,40 @@ export default function BannerManagementPage() {
     
     try {
       let response;
-      if (editingBanner) {
+      if (editingPermission) {
         const updateData: any = {
-          title: formData.title,
-          image: formData.image,
-          position: formData.position,
-          sort_order: formData.sort_order,
-          is_active: formData.is_active
+          name: formData.name,
+          slug: formData.slug
         };
         
-        if (formData.link && formData.link.trim() !== '') {
-          updateData.link = formData.link;
+        if (formData.description && formData.description.trim() !== '') {
+          updateData.description = formData.description;
         }
         
-        if (formData.start_date) {
-          updateData.start_date = formData.start_date;
-        }
-        if (formData.end_date) {
-          updateData.end_date = formData.end_date;
-        }
-        
-        console.log('Updating banner ID:', editingBanner.id);
+        console.log('Updating permission ID:', editingPermission.id);
         console.log('Update data:', JSON.stringify(updateData, null, 2));
         
-        response = await ApiHelper.patch(`api/v1/banners/manage/${editingBanner.id}`, updateData);
+        response = await ApiHelper.patch(`api/v1/permissions/${editingPermission.id}`, updateData);
         console.log('Update response:', response);
       } else {
-        console.log('Creating banner:', formData);
-        response = await ApiHelper.post('api/v1/banners/manage', formData);
+        console.log('Creating permission:', formData);
+        response = await ApiHelper.post('api/v1/permissions', formData);
         console.log('Create response:', response);
       }
 
       if (response.success) {
-        alert(editingBanner ? 'Cập nhật thành công!' : 'Thêm banner thành công!');
+        alert(editingPermission ? 'Cập nhật thành công!' : 'Thêm quyền hạn thành công!');
         setShowModal(false);
-        setEditingBanner(null);
+        setEditingPermission(null);
         setFormData({
-          title: '',
-          image: '',
-          link: '',
-          position: 'homepage-main',
-          sort_order: 0,
-          is_active: true
+          name: '',
+          slug: '',
+          description: null
         });
-        fetchBanners();
+        fetchPermissions();
       } else {
         console.error('API Error:', response);
-        alert('Lỗi: ' + (response.message || 'Không thể lưu banner'));
+        alert('Lỗi: ' + (response.message || 'Không thể lưu quyền hạn'));
       }
     } catch (error: any) {
       console.error('Submit error:', error);
@@ -272,26 +214,39 @@ export default function BannerManagementPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const target = e.target as HTMLInputElement;
-    const { name, value, type } = target;
-    const checked = target.checked;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : type === 'number' ? Number(value) : value
+      [name]: value
     }));
+
+    // Auto-generate slug from name
+    if (name === 'name' && !editingPermission) {
+      const slug = value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      
+      setFormData(prev => ({
+        ...prev,
+        slug: slug
+      }));
+    }
   };
 
   const resetForm = () => {
-    setEditingBanner(null);
+    setEditingPermission(null);
     setFormData({
-      title: '',
-      image: '',
-      link: '',
-      position: 'homepage-main',
-      sort_order: 0,
-      is_active: true
+      name: '',
+      slug: '',
+      description: null
     });
   };
 
@@ -300,29 +255,22 @@ export default function BannerManagementPage() {
     resetForm();
   };
 
-  // Filter banners based on search query
-  const filteredBanners = banners.filter(banner => {
+  // Filter permissions based on search query
+  const filteredPermissions = permissions.filter(permission => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
     
-    const positionMap: Record<string, string> = {
-      'homepage-main': 'trang chủ chính',
-      'homepage-sidebar': 'trang chủ sidebar',
-      'category-top': 'danh mục top',
-    };
-    
     return (
-      banner.title.toLowerCase().includes(query) ||
-      banner.position.toLowerCase().includes(query) ||
-      (positionMap[banner.position] && positionMap[banner.position].includes(query)) ||
-      (banner.link && banner.link.toLowerCase().includes(query))
+      permission.name.toLowerCase().includes(query) ||
+      permission.slug.toLowerCase().includes(query) ||
+      (permission.description && permission.description.toLowerCase().includes(query))
     );
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBanners = filteredBanners.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredBanners.length / itemsPerPage);
+  const currentPermissions = filteredPermissions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPermissions.length / itemsPerPage);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -336,12 +284,12 @@ export default function BannerManagementPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-base font-semibold text-gray-900">Danh sách Banner</h2>
+            <h2 className="text-base font-semibold text-gray-900">Danh sách Quyền hạn</h2>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo tiêu đề, vị trí..."
+                  placeholder="Tìm kiếm theo tên, slug, mô tả..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
@@ -378,7 +326,7 @@ export default function BannerManagementPage() {
                 }}
                 className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium whitespace-nowrap"
               >
-                + Thêm Banner
+                Thêm quyền
               </button>
             </div>
           </div>
@@ -386,19 +334,19 @@ export default function BannerManagementPage() {
 
         <CustomTable
           columns={columns}
-          data={currentBanners}
+          data={currentPermissions}
           loading={loading}
           searchable={false}
           actionable={false}
-          emptyText="Chưa có banner nào"
+          emptyText="Chưa có quyền hạn nào"
         />
 
         <div className="p-4 flex justify-between items-center border-t border-gray-200">
           <span className="text-sm text-gray-600 font-medium">
             {searchQuery ? (
-              <>Tìm thấy {filteredBanners.length} / {banners.length} banner</>
+              <>Tìm thấy {filteredPermissions.length} / {permissions.length} quyền hạn</>
             ) : (
-              <>Tổng banner: {banners.length}</>
+              <>Tổng quyền hạn: {permissions.length}</>
             )}
           </span>
           <div className="flex items-center space-x-2">
@@ -443,9 +391,9 @@ export default function BannerManagementPage() {
         </div>
       </div>
 
-      <BannerModal
+      <PermissionModal
         showModal={showModal}
-        editingBanner={editingBanner}
+        editingPermission={editingPermission}
         formData={formData}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}

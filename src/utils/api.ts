@@ -30,32 +30,52 @@ export class ApiHelper {
       const response = await fetch(url, finalOptions);
       console.log('Response status:', response.status);
 
-      const contentType = response.headers.get('content-type');
-      const isJson = contentType && contentType.includes('application/json');
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      let message = '';
 
-      if (!isJson) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        return {
-          success: false,
-          message: 'Server returned non-JSON response',
-        };
+      if (response.ok) {
+        // Nếu status thành công (2xx), thử parse JSON nếu có, hoặc coi empty là success
+        try {
+          if (contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            // Empty body (như 204) → success với data null
+            const text = await response.text();
+            if (text.trim()) {
+              console.warn('Unexpected non-empty non-JSON success body:', text.substring(0, 200));
+            }
+          }
+          message = data?.message || 'Request successful';
+        } catch (parseError) {
+          console.warn('Could not parse JSON in success response:', parseError);
+          message = 'Request successful';
+        }
+      } else {
+        // Error status (4xx/5xx): Thử parse error JSON
+        try {
+          const errorBody = await response.json();
+          data = errorBody;
+          message = errorBody?.message || 'Request failed';
+        } catch {
+          const text = await response.text();
+          console.error('Non-JSON error response:', text.substring(0, 200));
+          message = 'Server error (non-JSON)';
+        }
       }
-
-      const data = await response.json();
 
       if (!response.ok) {
         return {
           success: false,
-          message: data?.message || 'Request failed',
+          message,
           errors: data?.errors,
         };
       }
 
       return {
         success: true,
-        data: data?.data || data,
-        message: data?.message,
+        data: data?.data || data || null,
+        message,
       };
 
     } catch (error: any) {

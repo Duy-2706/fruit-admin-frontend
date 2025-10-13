@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { Eye, EyeOff } from 'lucide-react'; // Thêm icon cho hiện/ẩn mật khẩu
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
@@ -13,6 +14,7 @@ const LoginPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [showPassword, setShowPassword] = useState(false); // State để hiện/ẩn mật khẩu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +102,7 @@ const LoginPage: React.FC = () => {
                 <span className="text-white font-bold text-lg">A</span>
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Login</h1>
             <p className="text-gray-600 mt-2">Sign in to your account</p>
           </div>
 
@@ -129,18 +131,46 @@ const LoginPage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
               {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+              </label>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('🔗 Forgot password clicked');
+                  // Thêm logic xử lý quên mật khẩu (ví dụ: chuyển hướng hoặc mở modal)
+                  alert('Forgot password functionality to be implemented');
+                }}
+                className="text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                Forgot Password?
+              </a>
             </div>
 
             <button

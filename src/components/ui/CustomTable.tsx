@@ -7,6 +7,8 @@ interface Column {
   render?: (value: any, row: any) => React.ReactNode; 
   sortable?: boolean;   
   width?: string;      
+  className?: string;
+  headerClassName?: string;
 }
 
 interface CustomTableProps {
@@ -40,11 +42,9 @@ const CustomTable: React.FC<CustomTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
 
-  // Update filtered data when data or search term changes
   useEffect(() => {
     let result = [...data];
     
-    // Apply search filter
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase();
       result = result.filter((item) =>
@@ -55,7 +55,6 @@ const CustomTable: React.FC<CustomTableProps> = ({
       );
     }
     
-    // Apply sorting
     if (sortConfig) {
       result.sort((a, b) => {
         const aValue = a[sortConfig.key];
@@ -130,13 +129,12 @@ const CustomTable: React.FC<CustomTableProps> = ({
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden ${className}`}>
-      {/* Header with Title and Search */}
       {(title || searchable) && (
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {title && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <h3 className="text-sm font-bold text-gray-900">{title}</h3>
                 <p className="text-sm text-gray-500 mt-1">
                   {filteredData.length} {filteredData.length === 1 ? 'mục' : 'mục'}
                 </p>
@@ -163,7 +161,6 @@ const CustomTable: React.FC<CustomTableProps> = ({
         </div>
       )}
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -171,20 +168,20 @@ const CustomTable: React.FC<CustomTableProps> = ({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider ${
                     column.sortable !== false ? 'cursor-pointer hover:bg-gray-100' : ''
-                  }`}
+                  } ${column.headerClassName || 'text-left'}`}
                   style={{ width: column.width }}
                   onClick={() => column.sortable !== false && handleSort(column.key)}
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center">
                     {column.label}
                     {column.sortable !== false && getSortIcon(column.key)}
                   </div>
                 </th>
               ))}
               {actionable && (onEdit || onDelete) && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               )}
@@ -194,15 +191,15 @@ const CustomTable: React.FC<CustomTableProps> = ({
             {filteredData.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
-                className={`hover:bg-gray-50 transition-colors ${
-                  onRowClick ? 'cursor-pointer' : ''
-                }`}
+                className={`transition-colors ${
+                  rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                } ${onRowClick ? 'cursor-pointer hover:bg-gray-100' : 'hover:bg-gray-100'}`}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {columns.map((column) => (
                   <td 
                     key={column.key} 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.className || ''}`}
                   >
                     {column.render 
                       ? column.render(row[column.key], row)
@@ -243,7 +240,6 @@ const CustomTable: React.FC<CustomTableProps> = ({
           </tbody>
         </table>
 
-        {/* Empty State */}
         {filteredData.length === 0 && (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

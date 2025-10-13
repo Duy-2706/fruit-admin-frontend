@@ -4,6 +4,7 @@ import { AuthUtils } from '@/utils/auth';
 import { ApiHelper } from '@/utils/api';
 import { User, UserData } from '@/types/user';
 import { LoginRequest, LoginResponse } from '@/types/auth';
+import { PermissionService } from '@/services/permissionService';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -16,12 +17,17 @@ export const useAuth = () => {
       const currentUser = AuthUtils.getUser();
       const authStatus = AuthUtils.isAuthenticated();
 
-      console.log('🔍 initAuth check:', { currentUser, authStatus });
-
       if (currentUser && authStatus) {
-        console.log('Found existing auth, using cached user:', currentUser);
         setUser(currentUser);
         setIsAuthenticated(true);
+
+        const cachedPermissions = AuthUtils.getPermissions();
+        if (!cachedPermissions && currentUser.roleId) {
+          const permResponse = await PermissionService.getPermissionsByRole(currentUser.roleId);
+          if (permResponse.success && permResponse.data) {
+            AuthUtils.setPermissions(permResponse.data);
+          }
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -40,15 +46,11 @@ export const useAuth = () => {
   }, [initAuth]);
 
   const login = useCallback(async (credentials: LoginRequest) => {
-    console.log('Starting login process...');
-
     try {
       const response = await ApiHelper.fetch<LoginResponse>('api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
-
-      console.log('Login API response:', response);
 
       if (response.success && response.data) {
         const apiUserData: UserData = response.data.user;
@@ -62,28 +64,17 @@ export const useAuth = () => {
           avatar: apiUserData.avatar || undefined,
         };
 
-        // Set localStorage
         AuthUtils.setAuth(response.data.token, userData);
 
-        // Verify localStorage
-        console.log('🔍 After setAuth - localStorage check:', {
-          token: !!AuthUtils.getToken(),
-          user: AuthUtils.getUser(),
-          isAuth: AuthUtils.isAuthenticated(),
-        });
+        const permResponse = await PermissionService.getPermissionsByRole(userData.roleId);
+        if (permResponse.success && permResponse.data) {
+          AuthUtils.setPermissions(permResponse.data);
+        }
 
-        // Set states
         setUser(userData);
         setIsAuthenticated(true);
 
-        // Gọi lại initAuth để đảm bảo trạng thái đồng bộ
         await initAuth();
-
-        // Verify states
-        console.log('🔍 After setState:', {
-          userData,
-          isAuthenticated: true,
-        });
 
         return { success: true, message: response.data.message || 'Login successful' };
       } else {
@@ -104,8 +95,6 @@ export const useAuth = () => {
   }, [initAuth]);
 
   const logout = useCallback(() => {
-    console.log('Logging out...');
-
     ApiHelper.authFetch('api/v1/auth/logout', { method: 'POST' })
       .catch((error) => console.warn('Logout API failed:', error));
 
@@ -113,14 +102,7 @@ export const useAuth = () => {
     setUser(null);
     setIsAuthenticated(false);
 
-    // Gọi lại initAuth để đảm bảo trạng thái đồng bộ
     initAuth();
-
-    console.log('🔍 After logout - localStorage check:', {
-      token: !!AuthUtils.getToken(),
-      user: !!AuthUtils.getUser(),
-      isAuth: AuthUtils.isAuthenticated(),
-    });
   }, [initAuth]);
 
   const hasRole = useCallback((roleId: string) => {
@@ -135,7 +117,9 @@ export const useAuth = () => {
     return AuthUtils.isAdmin();
   }, []);
 
-  console.log('🔍 Final auth state:', { user, isAuthenticated, loading });
+  const hasPermission = useCallback((slug: string) => {
+    return AuthUtils.hasPermission(slug);
+  }, []);
 
   return {
     user,
@@ -146,5 +130,6 @@ export const useAuth = () => {
     hasRole,
     hasUserType,
     isAdmin,
+    hasPermission,
   };
 };

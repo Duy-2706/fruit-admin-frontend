@@ -1,4 +1,4 @@
-export interface Role {
+export interface Permission {
   id: string;
   name: string;
   slug: string;
@@ -7,13 +7,13 @@ export interface Role {
   updated_at: string;
 }
 
-export interface CreateRoleRequest {
+export interface CreatePermissionRequest {
   name: string;
   slug: string;
   description?: string | null;
 }
 
-export interface UpdateRoleRequest {
+export interface UpdatePermissionRequest {
   name?: string;
   slug?: string;
   description?: string | null;

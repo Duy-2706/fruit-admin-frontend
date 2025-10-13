@@ -1,4 +1,3 @@
-// @/types/banner.ts
 export interface Banner {
   id: string;
   title: string;
