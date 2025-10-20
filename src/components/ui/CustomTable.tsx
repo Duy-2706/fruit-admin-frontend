@@ -190,7 +190,7 @@ const CustomTable: React.FC<CustomTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((row, rowIndex) => (
               <tr
-                key={row.id || rowIndex}
+                key={row.id !== undefined && row.id !== null ? String(row.id) : `row-${rowIndex}`}
                 className={`transition-colors ${
                   rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                 } ${onRowClick ? 'cursor-pointer hover:bg-gray-100' : 'hover:bg-gray-100'}`}

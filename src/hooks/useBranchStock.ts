@@ -20,10 +20,21 @@ export function useBranchStock() {
   const fetchBranchStock = async (branchId: number) => {
     setLoading(true);
     try {
-      if (!AuthUtils.isAuthenticated() || !branchId) {
-        alert('Vui lòng đăng nhập và đảm bảo có thông tin chi nhánh!');
+      if (!AuthUtils.isAuthenticated()) {
+        alert('Vui lòng đăng nhập!');
         setLoading(false);
         return;
+      }
+      if (!branchId && branchId !== 0) {
+        console.warn('⚠️ No valid branchId found, retrying authentication...');
+        await AuthUtils.getUser();
+        const updatedUser = AuthUtils.getUser();
+        if (!updatedUser?.branchId && updatedUser?.branchId !== 0) {
+          alert('Vui lòng đảm bảo có thông tin chi nhánh sau khi đăng nhập!');
+          setLoading(false);
+          return;
+        }
+        return fetchBranchStock(updatedUser!.branchId);
       }
       const response = await ApiHelper.get<BranchStock[]>(`api/v1/inventory/branches/${branchId}`);
       if (response.success && response.data) {
@@ -36,21 +47,6 @@ export function useBranchStock() {
       alert('Lỗi khi tải tồn kho chi nhánh');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch branch name
-  const fetchBranchName = async (branchId: number) => {
-    try {
-      const response = await ApiHelper.get<{ name: string }>(`api/v1/branches/${branchId}`);
-      if (response.success && response.data) {
-        setBranchName(response.data.name);
-      } else {
-        setBranchName('Không xác định');
-      }
-    } catch (error) {
-      console.error('Error fetching branch name:', error);
-      setBranchName('Không xác định');
     }
   };
 
@@ -96,14 +92,42 @@ export function useBranchStock() {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!userBranchId) {
-      alert('Vui lòng đăng nhập và đảm bảo có thông tin chi nhánh!');
-      setLoading(false);
-    } else {
-      fetchBranchName(userBranchId);
-      fetchBranchStock(userBranchId);
+    if (!user) {
+      console.log('⚠️ User not available, waiting for authentication...');
+      return;
     }
-  }, [userBranchId]);
+    
+    let effectBranchId = userBranchId;
+    
+    if (!effectBranchId && effectBranchId !== 0) {
+      console.warn('⚠️ No branchId found, retrying authentication...');
+      const updatedUser = AuthUtils.getUser();
+      if (!updatedUser?.branchId && updatedUser?.branchId !== 0) {
+        alert('Vui lòng đảm bảo có thông tin chi nhánh sau khi đăng nhập!');
+        setLoading(false);
+        return;
+      }
+      effectBranchId = updatedUser!.branchId;
+    }
+
+    // Fetch branch name
+    const fetchBranchName = async () => {
+      try {
+        const response = await ApiHelper.get<{ name: string }>(`api/v1/branches/${effectBranchId}`);
+        if (response.success && response.data) {
+          setBranchName(response.data.name);
+        } else {
+          setBranchName('Không xác định');
+        }
+      } catch (error) {
+        console.error('Error fetching branch name:', error);
+        setBranchName('Không xác định');
+      }
+    };
+
+    fetchBranchName();
+    fetchBranchStock(effectBranchId);
+  }, [user?.id, userBranchId]); // ← Sửa dependency array
 
   return {
     branchStock,

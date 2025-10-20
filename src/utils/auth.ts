@@ -18,9 +18,12 @@ export class AuthUtils {
       userType: user.userType,
       roleId: user.roleId,
       avatar: user.avatar,
-      branchId: user.branchId,
+      branchId: user.branchId ?? 0, // Đảm bảo branchId không bao giờ là undefined
       loginTime: new Date().getTime()
     };
+
+    console.log('💾 userToStore before saving:', JSON.stringify(userToStore, null, 2));
+    console.log('💾 branchId before saving:', userToStore.branchId, typeof userToStore.branchId);
 
     const sessionId = this.generateSessionId();
 
@@ -30,6 +33,14 @@ export class AuthUtils {
     
     sessionStorage.setItem(this.SESSION_ID_KEY, sessionId);
     localStorage.setItem(this.SESSION_ID_KEY, sessionId);
+
+    const savedUserStr = localStorage.getItem(this.USER_KEY);
+    console.log('💾 Saved to localStorage (raw):', savedUserStr);
+    if (savedUserStr) {
+      const savedUser = JSON.parse(savedUserStr);
+      console.log('💾 Parsed localStorage user:', JSON.stringify(savedUser, null, 2));
+      console.log('💾 branchId in localStorage:', savedUser.branchId, typeof savedUser.branchId);
+    }
   }
 
   static setPermissions(permissions: Permission[]): void {
@@ -78,6 +89,12 @@ export class AuthUtils {
     const sessionStorageId = sessionStorage.getItem(this.SESSION_ID_KEY);
     const localStorageId = localStorage.getItem(this.SESSION_ID_KEY);
     
+    console.log('🔎 Session validation:', {
+      sessionStorageId,
+      localStorageId,
+      isValid: sessionStorageId === localStorageId
+    });
+    
     if (!sessionStorageId) {
       return false;
     }
@@ -105,9 +122,13 @@ export class AuthUtils {
     }
     
     const userStr = localStorage.getItem(this.USER_KEY);
+    console.log('📖 Raw user from localStorage:', userStr);
     if (userStr) {
       try {
-        return JSON.parse(userStr) as User;
+        const parsedUser = JSON.parse(userStr) as User;
+        console.log('📖 Parsed user:', JSON.stringify(parsedUser, null, 2));
+        console.log('📖 branchId from parsed user:', parsedUser.branchId, typeof parsedUser.branchId);
+        return parsedUser;
       } catch (error) {
         console.error('Error parsing user data:', error);
         this.clearAuth();
