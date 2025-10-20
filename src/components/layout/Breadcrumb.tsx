@@ -1,56 +1,42 @@
+'use client';
 import React from 'react';
+import Link from 'next/link';
 
-interface BreadcrumbItem {
+export interface BreadcrumbItem {
   label: string;
   href?: string;
 }
 
 interface BreadcrumbProps {
-  items: (string | BreadcrumbItem)[];
+  items: BreadcrumbItem[];
 }
 
 const Breadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
   return (
-    <nav className="flex items-center space-x-2 text-sm mb-6" aria-label="Breadcrumb">
-      <ol className="flex items-center space-x-2">
+    <nav className="py-3 px-6 bg-gray-50" aria-label="Breadcrumb">
+      <ol className="flex items-center space-x-2 text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-          const itemLabel = typeof item === 'string' ? item : item.label;
-          const itemHref = typeof item === 'object' ? item.href : undefined;
           
           return (
             <li key={index} className="flex items-center">
               {index > 0 && (
-                <svg 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  className="mx-2 text-gray-400"
-                >
-                  <polyline points="9,18 15,12 9,6"/>
-                </svg>
+                <span className="mx-2 text-gray-400">/</span>
               )}
               
-              {itemHref && !isLast ? (
-                <a
-                  href={itemHref}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+              {item.href && !isLast ? (
+                <Link
+                  href={item.href}
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
-                  {itemLabel}
-                </a>
+                  {item.label}
+                </Link>
               ) : (
                 <span 
-                  className={
-                    isLast 
-                      ? 'text-gray-900 font-medium' 
-                      : 'text-gray-500'
-                  }
+                  className={isLast ? 'text-gray-900 font-medium' : 'text-gray-600'}
                   aria-current={isLast ? 'page' : undefined}
                 >
-                  {itemLabel}
+                  {item.label}
                 </span>
               )}
             </li>

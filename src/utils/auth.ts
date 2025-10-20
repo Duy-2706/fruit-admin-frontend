@@ -18,6 +18,7 @@ export class AuthUtils {
       userType: user.userType,
       roleId: user.roleId,
       avatar: user.avatar,
+      branchId: user.branchId,
       loginTime: new Date().getTime()
     };
 

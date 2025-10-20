@@ -54,15 +54,24 @@ export class ApiHelper {
       } else {
         // Error status (4xx/5xx): Thử parse error JSON
         try {
-          const errorBody = await response.json();
+    const text = await response.text();
+    if (text.trim()) {
+      try {
+          const errorBody = JSON.parse(text);
           data = errorBody;
           message = errorBody?.message || 'Request failed';
-        } catch {
-          const text = await response.text();
-          console.error('Non-JSON error response:', text.substring(0, 200));
-          message = 'Server error (non-JSON)';
+              } catch {
+                console.error('Non-JSON error response:', text.substring(0, 200));
+                message = 'Server error (non-JSON)';
+              }
+            } else {
+              message = 'Request failed with empty response';
+            }
+          } catch (readError) {
+            console.error('Could not read error response:', readError);
+            message = 'Failed to read error response';
+          }
         }
-      }
 
       if (!response.ok) {
         return {

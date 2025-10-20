@@ -1,82 +1,282 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Permission } from '@/types/permission';
+import { Permission, CreatePermissionRequest } from '@/types/permission';
 import { PermissionService } from '@/services/permissionService';
 import { AuthUtils } from '@/utils/auth';
+import { ApiHelper } from '@/utils/api';
 
-export const usePermissions = () => {
+declare global {
+  interface Window {
+    XLSX: any;
+  }
+}
+
+export function usePermissions() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [xlsxLoaded, setXlsxLoaded] = useState(false);
+  const itemsPerPage = 10;
 
-  const fetchPermissions = useCallback(async (roleId: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const cachedPermissions = AuthUtils.getPermissions();
-      if (cachedPermissions && cachedPermissions.length > 0) {
-        setPermissions(cachedPermissions);
-        setLoading(false);
-        return;
-      }
-
-      const response = await PermissionService.getPermissionsByRole(roleId);
-
-      if (response.success && response.data) {
-        setPermissions(response.data);
-        AuthUtils.setPermissions(response.data);
-      } else {
-        setError(response.message || 'Failed to load permissions');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.XLSX) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => setXlsxLoaded(true);
+      document.head.appendChild(script);
+    } else if (window.XLSX) {
+      setXlsxLoaded(true);
     }
   }, []);
 
-  useEffect(() => {
-    const user = AuthUtils.getUser();
-    if (user?.roleId) {
-      fetchPermissions(user.roleId);
-    } else {
+
+
+   const fetchPermissions = async () => {
+    setLoading(true);
+    try {
+      if (!AuthUtils.isAuthenticated()) {
+        alert('Vui lòng đăng nhập');
+        window.location.href = '/login';
+        return;
+      }
+      
+      const response = await ApiHelper.get<Permission[]>('api/v1/permissions');
+      
+      if (response.success && response.data) {
+        setPermissions(Array.isArray(response.data) ? response.data : []);
+      } else {
+        alert(response.message || 'Không thể tải dữ liệu quyền');
+      }
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      alert('Lỗi khi tải quyền');
+    } finally {
       setLoading(false);
     }
-  }, [fetchPermissions]);
+  };
 
-  const hasPermission = useCallback((slug: string): boolean => {
-    return PermissionService.hasPermission(permissions, slug);
-  }, [permissions]);
-
-  const hasAnyPermission = useCallback((slugs: string[]): boolean => {
-    return PermissionService.hasAnyPermission(permissions, slugs);
-  }, [permissions]);
-
-  const hasAllPermissions = useCallback((slugs: string[]): boolean => {
-    return PermissionService.hasAllPermissions(permissions, slugs);
-  }, [permissions]);
-
-  const refreshPermissions = useCallback(async () => {
-    const user = AuthUtils.getUser();
-    if (user?.roleId) {
-      await fetchPermissions(user.roleId);
+ const deletePermission = async (permission: Permission) => {
+    if (!permission || !permission.id) {
+      alert('Dữ liệu quyền không hợp lệ');
+      return;
     }
-  }, [fetchPermissions]);
+    
+    if (!confirm(`Bạn có chắc muốn xóa quyền "${permission.name}"?`)) return;
 
-  const clearPermissions = useCallback(() => {
-    setPermissions([]);
-    AuthUtils.clearPermissions();
+    try {
+      const response = await ApiHelper.delete(`api/v1/permissions/${permission.id}`);
+      if (response.success) {
+        alert('Xóa quyền thành công!');
+        fetchPermissions();
+      } else {
+        alert('Lỗi: ' + (response.message || 'Không thể xóa nhà cung cấp'));
+      }
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      alert('Lỗi: ' + error.message);
+    }
+  };
+
+  const createPermission = async (data: CreatePermissionRequest) => {
+    try {
+      console.log('=== CREATE PERMISSION ===');
+      console.log('Data:', data);
+
+      const response = await ApiHelper.post('api/v1/permissions', data);
+
+      if (response.success) {
+        alert('Thêm quyền thành công!');
+        fetchPermissions();
+        return true;
+      }
+
+      alert('Lỗi: ' + (response.message || 'Không thể lưu quyền'));
+      return false;
+    } catch (error: any) {
+      console.error('Create error:', error);
+
+      // 🧩 Kiểm tra lỗi HTML từ server
+      const rawError = error?.message || '';
+
+      if (
+        rawError.includes('duplicate key value') ||
+        rawError.includes('permissions_slug_key')
+      ) {
+        alert('Lỗi: Slug này đã tồn tại. Vui lòng nhập slug khác!');
+      } else {
+        alert('Lỗi: ' + rawError);
+      }
+
+      return false;
+    }
+  };
+
+  const updatePermission = async (id: string, data: CreatePermissionRequest) => {
+    try {
+      const updateData: any = {
+        name: data.name,
+        slug: data.slug,
+        description: data.description
+      }; 
+      console.log('=== UPDATE PERMISSION ===');
+      console.log('ID:', id);
+      console.log('Data:', updateData);
+      
+      const response = await ApiHelper.patch(`api/v1/permissions/${id}`, updateData);
+      if (response.success) {
+        alert('Cập nhật thành công!');
+        fetchPermissions();
+        return true;
+      }
+      alert('Lỗi: ' + (response.message || 'Không thể lưu nhà cung cấp'));
+      return false;
+    } catch (error: any) {
+      console.error('Update error:', error);
+      alert('Lỗi: ' + error.message);
+      return false;
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!window.XLSX) {
+      alert('Đang tải thư viện Excel, vui lòng thử lại sau giây lát...');
+      return;
+    }
+
+   const exportData = filteredPermissions.map(permission => {
+      return {
+      'ID': permission.id,
+      'Tên Quyền': permission.name,
+      'Slug': permission.slug,
+      'Mô tả': permission.description || '',
+      'Ngày tạo': new Date(permission.created_at).toLocaleDateString('vi-VN')
+      };
+    });
+
+    const worksheet = window.XLSX.utils.json_to_sheet(exportData);
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, "permissions");
+    
+    const colWidths = [
+      { wch: 8 },   // ID
+      { wch: 30 },  // Tên Quyền
+      { wch: 30 },  // Slug
+      { wch: 60 },  // Email
+      { wch: 12 }   // Ngày tạo
+    ];
+    worksheet['!cols'] = colWidths;
+
+    const fileName = `permissions_${new Date().toISOString().split('T')[0]}.xlsx`;
+    window.XLSX.writeFile(workbook, fileName);
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.XLSX) {
+      alert('Đang tải thư viện Excel, vui lòng thử lại sau giây lát...');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const binaryStr = event.target?.result;
+        const workbook = window.XLSX.read(binaryStr, { type: 'binary' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet);
+        
+        if (jsonData.length === 0) {
+          alert('File Excel trống hoặc không có dữ liệu');
+          return;
+        }
+        
+        const importedPermissions = jsonData.map((row: any) => ({
+          name: row['Tên Quyền'] || '',
+          slug: row['Định danh'] || '',
+          description: row['Description'] || null,
+        }));
+
+        if (!confirm(`Bạn có muốn import ${importedPermissions.length} quyềnkhông?`)) {
+          return;
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const permission of importedPermissions) {
+          try {
+            const response = await ApiHelper.post('api/v1/permissions', permission);
+            if (response.success) {
+              successCount++;
+            } else {
+              errorCount++;
+              console.error('Error importing permission:', permission.name, response.message);
+            }
+          } catch (error) {
+            errorCount++;
+            console.error('Error importing permission:', permission.name, error);
+          }
+        }
+
+        alert(`Import hoàn tất!\nThành công: ${successCount}\nThất bại: ${errorCount}`);
+        fetchPermissions();
+
+      } catch (error) {
+        console.error('Error importing file:', error);
+        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng file.');
+      }
+    };
+    
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const filteredPermissions = permissions.filter(permission => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    
+    return (
+      permission.name.toLowerCase().includes(query) ||
+      permission.slug.toLowerCase().includes(query) 
+      // (permission.description && permission.permission.toLowerCase().includes(query))
+    );
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPermissions = filteredPermissions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPermissions.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Fetch permissions on mount
+  useEffect(() => {
+    fetchPermissions();
   }, []);
 
   return {
     permissions,
+    filteredPermissions,
+    currentPermissions,
     loading,
-    error,
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-    refreshPermissions,
-    clearPermissions,
+    currentPage,
+    searchQuery,
+    xlsxLoaded,
+    totalPages,
+    itemsPerPage,
+    setSearchQuery,
+    setCurrentPage,
+    fetchPermissions,
+    createPermission,
+    updatePermission,
+    deletePermission,
+    handleExportExcel,
+    handleImportExcel
   };
+
 };

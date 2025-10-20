@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   created_at?: string;
   updated_at?: string;
+  branchId?: number;
 }
 
 export interface UserData {
@@ -20,6 +21,7 @@ export interface UserData {
   avatar?: string; 
   created_at?: string; 
   updated_at?: string; 
+  branch_id?: number;
 }
 
 export interface CreateUserRequest {

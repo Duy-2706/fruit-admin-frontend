@@ -14,7 +14,7 @@ interface AuthContextType {
   hasRole: (roleId: string) => boolean;
   hasUserType: (userType: number) => boolean;
   isAdmin: () => boolean;
-  checkAuth: () => void; // Thêm method để force check auth
+  checkAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token && userData && authStatus) {
         setUser(userData);
         setIsAuthenticated(true);
-        console.log('✅ User authenticated:', userData.email);
+        console.log('✅ User authenticated:', userData.email, 'branchId:', userData.branchId);
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -57,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Chỉ check auth một lần khi component mount
   useEffect(() => {
     console.log('🔍 AuthProvider useEffect - checking auth...');
     checkAuth();
@@ -68,34 +67,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
 
     try {
-      const response = await ApiHelper.fetch<LoginResponse>('api/v1/auth/login', {
+      const response = await ApiHelper.fetch<any>('api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
 
       console.log('🔐 Login API response:', response);
+      console.log('📦 Response.data:', response.data);
 
       if (response.success && response.data) {
-        const apiUserData: UserData = response.data.user;
+        // Handle different response structures
+        let apiUserData = null;
+        let token = null;
+
+        if (response.data.user && response.data.token) {
+          apiUserData = response.data.user;
+          token = response.data.token;
+        } else if (response.data.id && response.data.email) {
+          apiUserData = response.data;
+          token = response.data.token;
+        }
+
+        console.log('👤 API User Data:', apiUserData);
+        console.log('🏢 branch_id from API:', apiUserData?.branch_id);
+
+        if (!apiUserData || !token) {
+          setLoading(false);
+          return {
+            success: false,
+            message: 'Dữ liệu đăng nhập không hợp lệ',
+          };
+        }
+
+        // ✅ FIX: Map đầy đủ fields including branchId
         const userData: User = {
-          id: apiUserData.id,
+          id: String(apiUserData.id),
           name: apiUserData.name || 'Khách',
           email: apiUserData.email,
-          userType: apiUserData.user_type,
-          roleId: apiUserData.role_id,
+          userType: Number(apiUserData.user_type),
+          roleId: String(apiUserData.role_id),
           avatar: apiUserData.avatar || undefined,
+          lastLogin: apiUserData.last_login,
+          created_at: apiUserData.created_at,
+          updated_at: apiUserData.updated_at,
+          branchId: apiUserData.branch_id ? Number(apiUserData.branch_id) : undefined, // ✅ ADD THIS
         };
 
+        console.log('✅ Mapped User Data:', userData);
+        console.log('✅ branchId in User object:', userData.branchId);
+
         // Save to localStorage
-        AuthUtils.setAuth(response.data.token, userData);
+        AuthUtils.setAuth(token, userData);
+
+        // Verify localStorage
+        const savedUserStr = localStorage.getItem('user');
+        console.log('💾 Saved to localStorage:', savedUserStr);
+        if (savedUserStr) {
+          const savedUser = JSON.parse(savedUserStr);
+          console.log('💾 branchId in localStorage:', savedUser.branchId);
+        }
         
         // Update state
         setUser(userData);
         setIsAuthenticated(true);
         setLoading(false);
 
-        console.log('✅ Login successful:', userData.email);
-        return { success: true, message: response.data.message || 'Đăng nhập thành công' };
+        console.log('✅ Login successful:', userData.email, 'branchId:', userData.branchId);
+        return { 
+          success: true, 
+          message: response.message || 'Đăng nhập thành công' 
+        };
       } else {
         setLoading(false);
         return {
@@ -118,14 +159,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     console.log('🚪 Logging out...');
     
-    // Clear localStorage
     AuthUtils.clearAuth();
     
-    // Update state
     setUser(null);
     setIsAuthenticated(false);
     
-    // Optional: Call logout API
     ApiHelper.authFetch('api/v1/auth/logout', { method: 'POST' })
       .catch((error) => console.warn('Logout API failed:', error));
 
@@ -141,11 +179,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const isAdmin = useCallback(() => {
-    return user?.userType === 2; // Assuming 2 is admin
+    return user?.userType === 2;
   }, [user]);
 
   console.log('🔍 AuthProvider render state:', { 
     user: user?.email, 
+    branchId: user?.branchId, // ✅ ADD THIS LOG
     isAuthenticated, 
     loading 
   });

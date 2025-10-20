@@ -94,7 +94,7 @@ export function useCategories() {
       if (data.description?.trim()) updateData.description = data.description;
       if (data.image?.trim()) updateData.image = data.image;
       
-      const response = await ApiHelper.put(`api/v1/categories/${id}`, updateData);
+      const response = await ApiHelper.patch(`api/v1/categories/${id}`, updateData);
       if (response.success) {
         alert('Cập nhật thành công!');
         fetchCategories();

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import CategoryHeader, { CategoryTable } from '@/components/categories/CategoryHeader';
+import CategoryHeader, { CategoryTable } from '@/components/PageLayout/categories/CategoryHeader';
 import CategoryModal from '@/components/pages/CategoryModel';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useCategories } from '@/hooks/useCategory';
 import { Category, CreateCategoryRequest } from '@/types/category';
 
@@ -36,6 +37,13 @@ export default function CategoriesPage() {
     sort_order: 0,
     is_active: true
   });
+
+ 
+  const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý danh mục' }
+  ];
 
   const resetForm = () => {
     setEditingCategory(null);
@@ -87,12 +95,21 @@ export default function CategoriesPage() {
     }));
   };
 
-  // Pagination
+  const handleImageChange = (url: string | string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      image: typeof url === 'string' ? url : (url[0] || '')
+    }));
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
+      {/* ===== BREADCRUMB - Đơn giản như ảnh mẫu ===== */}
+      <Breadcrumb items={breadcrumbItems} />
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <CategoryHeader
           totalCount={categories.length}
@@ -119,7 +136,11 @@ export default function CategoriesPage() {
         {/* Pagination */}
         <div className="p-4 flex justify-between items-center border-t border-gray-200 bg-gray-50">
           <span className="text-sm text-gray-600 font-medium">
-            Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredCategories.length)} của {filteredCategories.length} danh mục
+            {searchQuery ? (
+              <>Tìm thấy {filteredCategories.length} / {categories.length} danh mục</>
+            ) : (
+              <>Tổng: {categories.length} danh mục</>
+            )}
           </span>
           <div className="flex items-center space-x-2">
             <button
@@ -172,6 +193,7 @@ export default function CategoriesPage() {
         }}
         onSubmit={handleSubmit}
         onInputChange={handleInputChange}
+        onImageChange={handleImageChange}
       />
     </div>
   );

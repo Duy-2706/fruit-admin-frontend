@@ -15,6 +15,11 @@ export interface LoginResponse {
     email: string;
     user_type: number;
     role_id: string;
+    branch_id?: number; // ✅ THÊM FIELD NÀY
+    avatar?: string;
+    last_login?: string;
+    created_at?: string;
+    updated_at?: string;
   };
 }
 
@@ -23,4 +28,3 @@ export interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
 }
-

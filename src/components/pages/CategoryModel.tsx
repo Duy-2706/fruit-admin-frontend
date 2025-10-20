@@ -1,4 +1,5 @@
 import React from 'react';
+import ImageUpload from '@/components/ui/ImageUpload';
 import { Category, CreateCategoryRequest } from '@/types/category';
 
 interface CategoryModalProps {
@@ -9,6 +10,7 @@ interface CategoryModalProps {
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  onImageChange: (url: string | string[]) => void; // ← Thêm prop này
 }
 
 export default function CategoryModal({
@@ -18,7 +20,8 @@ export default function CategoryModal({
   categories,
   onClose,
   onSubmit,
-  onInputChange
+  onInputChange,
+  onImageChange // ← Nhận prop
 }: CategoryModalProps) {
   if (!showModal) return null;
 
@@ -36,11 +39,7 @@ export default function CategoryModal({
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    
-    // Update name
     onInputChange(e);
-    
-    // Auto-generate slug only for new categories
     if (!editingCategory) {
       const slugEvent = {
         target: {
@@ -71,6 +70,7 @@ export default function CategoryModal({
         </div>
         
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Tên danh mục */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tên danh mục <span className="text-red-500">*</span>
@@ -86,6 +86,7 @@ export default function CategoryModal({
             />
           </div>
 
+          {/* Slug */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Slug <span className="text-red-500">*</span>
@@ -104,6 +105,7 @@ export default function CategoryModal({
             </p>
           </div>
 
+          {/* Danh mục cha */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Danh mục cha
@@ -125,6 +127,7 @@ export default function CategoryModal({
             </select>
           </div>
 
+          {/* Mô tả */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mô tả
@@ -139,30 +142,18 @@ export default function CategoryModal({
             />
           </div>
 
+          {/* ✨ THAY ĐỔI: Dùng ImageUpload component thay vì input URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              URL hình ảnh
-            </label>
-            <input
-              type="text"
-              name="image"
+            <ImageUpload
               value={formData.image || ''}
-              onChange={onInputChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="https://example.com/image.jpg (tùy chọn)"
+              onChange={onImageChange}
+              folder="categories"
+              multiple={false}
+              label="Hình ảnh danh mục"
             />
-            {formData.image && (
-              <img 
-                src={formData.image} 
-                alt="Preview" 
-                className="mt-2 w-full h-32 object-cover rounded"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
           </div>
 
+          {/* Thứ tự */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Thứ tự sắp xếp
@@ -179,6 +170,7 @@ export default function CategoryModal({
             <p className="mt-1 text-xs text-gray-500">Số nhỏ hơn sẽ hiển thị trước</p>
           </div>
 
+          {/* Checkbox active */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -193,6 +185,7 @@ export default function CategoryModal({
             </label>
           </div>
 
+          {/* Buttons */}
           <div className="flex space-x-3 pt-4 border-t">
             <button
               type="button"

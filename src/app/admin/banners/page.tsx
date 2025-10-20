@@ -1,278 +1,80 @@
+
 'use client';
-import React, { useState, useEffect } from 'react';
-import CustomTable from '@/components/ui/CustomTable';
+import React, { useState } from 'react';
+import BannerHeader, { BannerTable } from '@/components/PageLayout/banners/BannerHeader';
 import BannerModal from '@/components/pages/BannerModel';
-import { ApiHelper } from '@/utils/api';
-import { AuthUtils } from '@/utils/auth';
+import { useBanners } from '@/hooks/useBanner';
 import { Banner, CreateBannerRequest } from '@/types/banner';
 
-export default function BannerManagementPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function BannersPage() {
+  const {
+    banners,
+    loading,
+    currentPage,
+    searchQuery,
+    filteredBanners,
+    currentBanners,
+    totalPages,
+    itemsPerPage,
+    xlsxLoaded,
+    setSearchQuery,
+    setCurrentPage,
+    deleteBanner,
+    createBanner,
+    updateBanner,
+    handleExportExcel,
+    handleImportExcel
+  } = useBanners();
+
   const [showModal, setShowModal] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [formData, setFormData] = useState<CreateBannerRequest>({
     title: '',
     image: '',
     link: '',
-    position: 'homepage-main',
+    position: 'home',
     sort_order: 0,
     is_active: true
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 10;
 
-  const fetchBanners = async () => {
-    setLoading(true);
-    try {
-      if (!AuthUtils.isAuthenticated()) {
-        alert('Vui lòng đăng nhập để xem trang này');
-        window.location.href = '/login';
-        return;
-      }
-
-      const response = await ApiHelper.get<Banner[]>('api/v1/banners/manage');
-      
-      if (response.success && response.data) {
-        const bannersData = Array.isArray(response.data) ? response.data : [];
-        setBanners(bannersData);
-      } else {
-        console.error('Error fetching banners:', response.message);
-        alert(response.message || 'Không thể tải dữ liệu banner');
-      }
-    } catch (error) {
-      console.error('Error fetching banners:', error);
-      alert('Lỗi khi tải banner');
-    } finally {
-      setLoading(false);
-    }
+  const resetForm = () => {
+    setEditingBanner(null);
+    setFormData({
+      title: '',
+      image: '',
+      link: '',
+      position: 'home',
+      sort_order: 0,
+      is_active: true
+    });
   };
 
-  useEffect(() => {
-    fetchBanners();
-  }, []);
-
-  const columns = [
-    { 
-      key: 'id', 
-      label: 'ID', 
-      width: '60px',
-      sortable: true,
-      className: 'text-center'
-    },
-    {
-      key: 'image',
-      label: 'HÌNH ẢNH',
-      width: '120px',
-      sortable: false,
-      render: (value: string) => (
-        <img 
-          src={value} 
-          alt="Banner" 
-          className="w-20 h-12 object-cover rounded mx-auto"
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder-image.png';
-          }}
-        />
-      ),
-      className: 'text-center'
-    },
-    { 
-      key: 'title', 
-      label: 'TIÊU ĐỀ',
-      sortable: true,
-      className: 'text-center'
-    },
-    { 
-      key: 'position', 
-      label: 'VỊ TRÍ',
-      width: '150px',
-      sortable: true,
-      render: (value: string) => {
-        const positionMap: Record<string, string> = {
-          'homepage-main': 'Trang chủ - Chính',
-          'homepage-sidebar': 'Trang chủ - Sidebar',
-          'category-top': 'Danh mục - Top',
-        };
-        return positionMap[value] || value;
-      },
-      className: 'text-center'
-    },
-    { 
-      key: 'sort_order', 
-      label: 'THỨ TỰ',
-      width: '80px',
-      sortable: true,
-      className: 'text-center'
-    },
-    {
-      key: 'is_active',
-      label: 'TRẠNG THÁI',
-      width: '120px',
-      sortable: true,
-      render: (value: boolean) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-gray-100 text-gray-800'
-        }`}>
-          {value ? 'Hoạt động' : 'Tạm dừng'}
-        </span>
-      ),
-      className: 'text-center'
-    },
-    {
-      key: 'created_at',
-      label: 'NGÀY TẠO',
-      sortable: true,
-      render: (value: string) => new Date(value).toLocaleDateString('vi-VN'),
-      className: 'text-center'
-    },
-    {
-      key: 'actions',
-      label: 'THAO TÁC',
-      width: '120px',
-      sortable: false,
-      render: (_value: any, row: Banner) => (
-        <div className="flex justify-center space-x-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(row);
-            }}
-            className="text-blue-600 hover:text-blue-800"
-            title="Sửa"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(row);
-            }}
-            className="text-red-600 hover:text-red-800"
-            title="Xóa"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-          </button>
-        </div>
-      ),
-      className: 'text-center'
-    }
-  ];
-
   const handleEdit = (banner: Banner) => {
-    if (!banner || !banner.id) {
-      console.error('Invalid banner data:', banner);
-      alert('Dữ liệu banner không hợp lệ');
-      return;
-    }
-    
-    console.log('Editing banner:', banner);
     setEditingBanner(banner);
     setFormData({
       title: banner.title || '',
       image: banner.image || '',
       link: banner.link || '',
-      position: banner.position || 'homepage-main',
+      position: banner.position || 'home',
       sort_order: banner.sort_order || 0,
-      is_active: banner.is_active ?? true,
-      start_date: banner.start_date,
-      end_date: banner.end_date
+      is_active: banner.is_active ?? true
     });
     setShowModal(true);
   };
 
-  const handleDelete = async (banner: Banner) => {
-    if (!banner || !banner.id) {
-      console.error('Invalid banner data:', banner);
-      alert('Dữ liệu banner không hợp lệ');
-      return;
-    }
-    
-    if (!confirm(`Bạn có chắc muốn xóa banner "${banner.title}"?`)) return;
-
-    try {
-      const response = await ApiHelper.delete(`api/v1/banners/manage/${banner.id}`);
-      if (response.success) {
-        alert('Xóa banner thành công!');
-        fetchBanners();
-      } else {
-        alert('Lỗi: ' + (response.message || 'Không thể xóa banner'));
-      }
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      alert('Lỗi: ' + error.message);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      let response;
-      if (editingBanner) {
-        const updateData: any = {
-          title: formData.title,
-          image: formData.image,
-          position: formData.position,
-          sort_order: formData.sort_order,
-          is_active: formData.is_active
-        };
-        
-        if (formData.link && formData.link.trim() !== '') {
-          updateData.link = formData.link;
-        }
-        
-        if (formData.start_date) {
-          updateData.start_date = formData.start_date;
-        }
-        if (formData.end_date) {
-          updateData.end_date = formData.end_date;
-        }
-        
-        console.log('Updating banner ID:', editingBanner.id);
-        console.log('Update data:', JSON.stringify(updateData, null, 2));
-        
-        response = await ApiHelper.patch(`api/v1/banners/manage/${editingBanner.id}`, updateData);
-        console.log('Update response:', response);
-      } else {
-        console.log('Creating banner:', formData);
-        response = await ApiHelper.post('api/v1/banners/manage', formData);
-        console.log('Create response:', response);
-      }
+    const success = editingBanner
+      ? await updateBanner(editingBanner.id, formData)
+      : await createBanner(formData);
 
-      if (response.success) {
-        alert(editingBanner ? 'Cập nhật thành công!' : 'Thêm banner thành công!');
-        setShowModal(false);
-        setEditingBanner(null);
-        setFormData({
-          title: '',
-          image: '',
-          link: '',
-          position: 'homepage-main',
-          sort_order: 0,
-          is_active: true
-        });
-        fetchBanners();
-      } else {
-        console.error('API Error:', response);
-        alert('Lỗi: ' + (response.message || 'Không thể lưu banner'));
-      }
-    } catch (error: any) {
-      console.error('Submit error:', error);
-      alert('Lỗi: ' + error.message);
+    if (success) {
+      setShowModal(false);
+      resetForm();
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement;
     const { name, value, type } = target;
     const checked = target.checked;
@@ -283,130 +85,44 @@ export default function BannerManagementPage() {
     }));
   };
 
-  const resetForm = () => {
-    setEditingBanner(null);
-    setFormData({
-      title: '',
-      image: '',
-      link: '',
-      position: 'homepage-main',
-      sort_order: 0,
-      is_active: true
-    });
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    resetForm();
-  };
-
-  // Filter banners based on search query
-  const filteredBanners = banners.filter(banner => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
-    
-    const positionMap: Record<string, string> = {
-      'homepage-main': 'trang chủ chính',
-      'homepage-sidebar': 'trang chủ sidebar',
-      'category-top': 'danh mục top',
-    };
-    
-    return (
-      banner.title.toLowerCase().includes(query) ||
-      banner.position.toLowerCase().includes(query) ||
-      (positionMap[banner.position] && positionMap[banner.position].includes(query)) ||
-      (banner.link && banner.link.toLowerCase().includes(query))
-    );
-  });
-
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBanners = filteredBanners.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredBanners.length / itemsPerPage);
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-  // Reset to page 1 when search query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-base font-semibold text-gray-900">Danh sách Banner</h2>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm theo tiêu đề, vị trí..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64"
-                />
-                <svg
-                  className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                    title="Xóa tìm kiếm"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  resetForm();
-                  setShowModal(true);
-                }}
-                className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium whitespace-nowrap"
-              >
-                + Thêm Banner
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <CustomTable
-          columns={columns}
-          data={currentBanners}
-          loading={loading}
-          searchable={false}
-          actionable={false}
-          emptyText="Chưa có banner nào"
+        <BannerHeader
+          totalCount={banners.length}
+          filteredCount={filteredBanners.length}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onImport={handleImportExcel}
+          onExport={handleExportExcel}
+          onAdd={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          xlsxLoaded={xlsxLoaded}
         />
 
-        <div className="p-4 flex justify-between items-center border-t border-gray-200">
+        <BannerTable
+          banners={currentBanners}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={deleteBanner}
+        />
+
+        {/* Pagination */}
+        <div className="p-4 flex justify-between items-center border-t border-gray-200 bg-gray-50">
           <span className="text-sm text-gray-600 font-medium">
-            {searchQuery ? (
-              <>Tìm thấy {filteredBanners.length} / {banners.length} banner</>
-            ) : (
-              <>Tổng banner: {banners.length}</>
-            )}
+            Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredBanners.length)} của {filteredBanners.length} banner
           </span>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => paginate(currentPage - 1)}
+              onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Trang trước"
+              className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -417,11 +133,11 @@ export default function BannerManagementPage() {
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  onClick={() => paginate(page)}
-                  className={`min-w-[36px] px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentPage === page
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-gray-700 hover:bg-white'
                   }`}
                 >
                   {page}
@@ -430,10 +146,9 @@ export default function BannerManagementPage() {
             </div>
 
             <button
-              onClick={() => paginate(currentPage + 1)}
+              onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Trang sau"
+              className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -447,7 +162,10 @@ export default function BannerManagementPage() {
         showModal={showModal}
         editingBanner={editingBanner}
         formData={formData}
-        onClose={handleCloseModal}
+        onClose={() => {
+          setShowModal(false);
+          resetForm();
+        }}
         onSubmit={handleSubmit}
         onInputChange={handleInputChange}
       />
