@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermission';
+import { useUserPermissions } from '@/hooks/useUserPermission';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,8 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { permissions, loading: permissionsLoading, hasAnyPermission, hasAllPermissions } = usePermissions();
-
+  const { permissions: userPermissions, loading: permissionsLoading, hasAnyPermission, hasAllPermissions } = useUserPermissions();
   useEffect(() => {
     if (authLoading || permissionsLoading) {
       return;
@@ -50,7 +49,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     requireAll,
     hasAnyPermission,
     hasAllPermissions,
-    permissions,
+    userPermissions,
     router,
     fallbackPath,
   ]);

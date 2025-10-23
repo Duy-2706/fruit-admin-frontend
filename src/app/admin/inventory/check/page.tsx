@@ -4,7 +4,7 @@ import StockCheckHeader from '@/components/PageLayout/inventory/StockCheckHeader
 import { StockCheckTable } from '@/components/PageLayout/inventory/StockCheckTable';
 import { useStockChecks } from '@/hooks/useStockCheck';
 import { StockCheck } from '@/types/inventory';
-import Breadcrumb from '@/components/layout/Breadcrumb'
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function StockChecksPage() {
   const {

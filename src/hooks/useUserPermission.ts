@@ -6,10 +6,10 @@ import { ApiHelper } from '@/utils/api';
 
 /**
  * Hook để lấy permissions của user hiện tại
- * Dùng để render sidebar/menu theo quyền
+ * Dùng để render sidebar/menu theo quyền và ProtectedRoute
  */
 export function useUserPermissions() {
-  const [userPermissions, setUserPermissions] = useState<Permission[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUserPermissions = async () => {
@@ -17,14 +17,23 @@ export function useUserPermissions() {
     try {
       if (!AuthUtils.isAuthenticated()) {
         console.warn('User not authenticated');
-        setUserPermissions([]);
+        setPermissions([]);
         return;
       }
 
       const user = AuthUtils.getUser();
       if (!user?.roleId) {
         console.warn('User roleId not found');
-        setUserPermissions([]);
+        setPermissions([]);
+        return;
+      }
+
+      // Kiểm tra cache trước
+      const cachedPermissions = AuthUtils.getPermissions();
+      if (cachedPermissions && cachedPermissions.length > 0) {
+        setPermissions(cachedPermissions);
+        console.log('✅ Loaded permissions from cache:', cachedPermissions.length);
+        setLoading(false);
         return;
       }
 
@@ -35,14 +44,16 @@ export function useUserPermissions() {
 
       if (response.success && response.data) {
         console.log('✅ User permissions loaded:', response.data);
-        setUserPermissions(Array.isArray(response.data) ? response.data : []);
+        const perms = Array.isArray(response.data) ? response.data : [];
+        AuthUtils.setPermissions(perms);
+        setPermissions(perms);
       } else {
         console.error('Failed to load user permissions:', response.message);
-        setUserPermissions([]);
+        setPermissions([]);
       }
     } catch (error) {
       console.error('Error fetching user permissions:', error);
-      setUserPermissions([]);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -50,7 +61,7 @@ export function useUserPermissions() {
 
   // Helper function: Kiểm tra user có quyền cụ thể không
   const hasPermission = (slug: string): boolean => {
-    return userPermissions.some(p => p.slug === slug);
+    return permissions.some(p => p.slug === slug);
   };
 
   // Helper function: Kiểm tra user có bất kỳ quyền nào trong danh sách không
@@ -68,7 +79,7 @@ export function useUserPermissions() {
   }, []);
 
   return {
-    userPermissions,
+    permissions,           // ✅ Đổi từ userPermissions thành permissions
     loading,
     fetchUserPermissions,
     hasPermission,

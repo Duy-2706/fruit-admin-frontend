@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { useUserPermissions } from '@/hooks/useUserPermission'; 
+import { useUserPermissions } from '@/hooks/useUserPermission';
 import { getMenuItems, filterMenuByPermissions } from '@/config/sidebarConfig';
 
 interface SidebarProps {
@@ -19,7 +19,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({
   activeSection 
 }) => {
   const pathname = usePathname();
-  const { userPermissions, loading: permissionsLoading } = useUserPermissions(); 
+  const { permissions, loading: permissionsLoading } = useUserPermissions();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
   const visibleMenuItems = useMemo(() => {
@@ -29,9 +29,9 @@ const AdminSidebar: React.FC<SidebarProps> = ({
       return allMenuItems.filter(item => item.alwaysShow);
     }
 
-    const userPermissionSlugs = userPermissions?.map(p => p?.slug).filter(Boolean) || [];
+    const userPermissionSlugs = permissions?.map(p => p?.slug).filter(Boolean) || [];
     return filterMenuByPermissions(allMenuItems, userPermissionSlugs);
-  }, [userPermissions, permissionsLoading]); 
+  }, [permissions, permissionsLoading]);
 
   useEffect(() => {
     visibleMenuItems.forEach(item => {
@@ -157,9 +157,8 @@ const AdminSidebar: React.FC<SidebarProps> = ({
         isOpen ? 'w-64' : 'w-0 overflow-hidden'
       } lg:w-64 lg:relative lg:shadow-none border-r border-gray-200`}>
         <div className="p-6">
-          {/* LOGO SECTION - ĐÃ SỬA */}
+          {/* LOGO SECTION */}
           <div className="flex items-center space-x-3 mb-8">
-      
             <Image 
               src="/images/logo-tamdat.png" 
               alt="Tâm Đạt Logo" 
@@ -167,12 +166,6 @@ const AdminSidebar: React.FC<SidebarProps> = ({
               height={40}
               className="rounded-lg"
             /> 
-            
-            {/* CÁCH 2: Dùng chữ cái TĐ (đang dùng) */}
-            {/* <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">TĐ</span>
-            </div> */}
-            
             <span className="text-xl font-bold text-gray-800">TÂM ĐẠT</span>
           </div>
           
