@@ -134,4 +134,5 @@ export class ApiHelper {
   static async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
     return this.authFetch<T>(endpoint, { method: 'DELETE' });
   }
+  
 }

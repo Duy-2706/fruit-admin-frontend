@@ -1,23 +1,32 @@
 import React from 'react';
-import { clsx } from 'clsx';
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  padding?: boolean;
-}
-
-export const Card: React.FC<CardProps> = ({ 
-  children, 
-  className, 
-  padding = true 
-}) => {
+export const Card = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
-    <div className={clsx(
-      'bg-white rounded-2xl border border-gray-200 shadow-soft',
-      padding && 'p-6',
-      className
-    )}>
+    <div className={`bg-white rounded-lg border border-gray-200 ${className}`} {...props}>
+      {children}
+    </div>
+  );
+};
+
+export const CardHeader = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div className={`p-6 ${className}`} {...props}>
+      {children}
+    </div>
+  );
+};
+
+export const CardTitle = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+  return (
+    <h3 className={`text-xl font-semibold ${className}`} {...props}>
+      {children}
+    </h3>
+  );
+};
+
+export const CardContent = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div className={`p-6 pt-0 ${className}`} {...props}>
       {children}
     </div>
   );

@@ -2,7 +2,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { usePermissions } from '@/hooks/usePermission';
+import Image from 'next/image';
+import { useUserPermissions } from '@/hooks/useUserPermission'; 
 import { getMenuItems, filterMenuByPermissions } from '@/config/sidebarConfig';
 
 interface SidebarProps {
@@ -18,10 +19,9 @@ const AdminSidebar: React.FC<SidebarProps> = ({
   activeSection 
 }) => {
   const pathname = usePathname();
-  const { permissions, loading: permissionsLoading } = usePermissions();
+  const { userPermissions, loading: permissionsLoading } = useUserPermissions(); 
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
-  
   const visibleMenuItems = useMemo(() => {
     const allMenuItems = getMenuItems();
     
@@ -29,20 +29,15 @@ const AdminSidebar: React.FC<SidebarProps> = ({
       return allMenuItems.filter(item => item.alwaysShow);
     }
 
-    
-    const userPermissionSlugs = permissions?.map(p => p?.slug).filter(Boolean) || [];
+    const userPermissionSlugs = userPermissions?.map(p => p?.slug).filter(Boolean) || [];
     return filterMenuByPermissions(allMenuItems, userPermissionSlugs);
-  }, [permissions, permissionsLoading]);
+  }, [userPermissions, permissionsLoading]); 
 
- 
   useEffect(() => {
     visibleMenuItems.forEach(item => {
       if (item.submenu) {
-      
         const isActive = item.submenu.some(sub => {
-          
           if (pathname === sub.href) return true;
-          
           if (sub.href !== '/admin' && pathname.startsWith(sub.href + '/')) return true;
           return false;
         });
@@ -58,16 +53,13 @@ const AdminSidebar: React.FC<SidebarProps> = ({
     setOpenSubmenu(prev => prev === itemId ? null : itemId);
   };
 
-  
   const isPathActive = (itemHref: string | undefined): boolean => {
     if (!itemHref) return false;
-    
     
     if (itemHref === '/admin') {
       return pathname === '/admin';
     }
     
-   
     return pathname === itemHref || pathname.startsWith(itemHref + '/');
   };
 
@@ -165,11 +157,23 @@ const AdminSidebar: React.FC<SidebarProps> = ({
         isOpen ? 'w-64' : 'w-0 overflow-hidden'
       } lg:w-64 lg:relative lg:shadow-none border-r border-gray-200`}>
         <div className="p-6">
+          {/* LOGO SECTION - ĐÃ SỬA */}
           <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">Z</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">ZARVIS</span>
+      
+            <Image 
+              src="/images/logo-tamdat.png" 
+              alt="Tâm Đạt Logo" 
+              width={40} 
+              height={40}
+              className="rounded-lg"
+            /> 
+            
+            {/* CÁCH 2: Dùng chữ cái TĐ (đang dùng) */}
+            {/* <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">TĐ</span>
+            </div> */}
+            
+            <span className="text-xl font-bold text-gray-800">TÂM ĐẠT</span>
           </div>
           
           {permissionsLoading && (
@@ -182,17 +186,14 @@ const AdminSidebar: React.FC<SidebarProps> = ({
             {visibleMenuItems.map((item) => {
               const hasSubmenu = item.submenu && item.submenu.length > 0;
               const isSubmenuOpen = openSubmenu === item.id;
-                        const isParentActive = hasSubmenu && item.submenu?.some(sub => 
+              const isParentActive = hasSubmenu && item.submenu?.some(sub => 
                 isPathActive(sub.href)
               );
-              
-
               const isActive = !hasSubmenu && isPathActive(item.href);
 
               return (
                 <div key={item.id}>
                   {hasSubmenu ? (
-                    
                     <button
                       onClick={() => toggleSubmenu(item.id)}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all duration-200 group ${
@@ -210,7 +211,6 @@ const AdminSidebar: React.FC<SidebarProps> = ({
                       <ChevronIcon isOpen={isSubmenuOpen} />
                     </button>
                   ) : (
-                    // Menu không có submenu - hiển thị link
                     <Link
                       href={item.href || '#'}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all duration-200 group ${
@@ -228,11 +228,9 @@ const AdminSidebar: React.FC<SidebarProps> = ({
                     </Link>
                   )}
 
-                  {/* Hiển thị submenu khi được mở */}
                   {hasSubmenu && isSubmenuOpen && (
                     <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-4">
                       {item.submenu?.map((subItem) => {
-                        // ===== FIX 7: Kiểm tra submenu active chính xác =====
                         const isSubActive = isPathActive(subItem.href);
                         
                         return (

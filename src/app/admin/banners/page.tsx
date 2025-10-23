@@ -1,10 +1,11 @@
 
 'use client';
 import React, { useState } from 'react';
-import BannerHeader, { BannerTable } from '@/components/PageLayout/banners/BannerHeader';
+import BannerHeader, { BannerTable } from '@/components/PageLayout/banners/BannerLayout';
 import BannerModal from '@/components/pages/BannerModel';
 import { useBanners } from '@/hooks/useBanner';
 import { Banner, CreateBannerRequest } from '@/types/banner';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function BannersPage() {
   const {
@@ -25,6 +26,13 @@ export default function BannersPage() {
     handleExportExcel,
     handleImportExcel
   } = useBanners();
+
+      const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Tồn kho' }
+  ];
+
 
   const [showModal, setShowModal] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
@@ -91,6 +99,7 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <BannerHeader
           totalCount={banners.length}

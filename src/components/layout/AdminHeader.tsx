@@ -32,11 +32,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onSidebarToggle }) => {
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
-          </button>
-          
+          </button>    
           <div>
             <h1 className="text-xl font-semibold text-gray-800">
-              Hello {user?.name || 'Khách'}
+              Xin chào, {user?.name || 'Khách'}
             </h1>
             <p className="text-sm text-gray-500">
               {user?.email || 'Chưa đăng nhập'}
@@ -82,11 +81,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onSidebarToggle }) => {
                   onClick={() => setShowUserMenu(false)}
                 ></div>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                  <div className="px-4 py-2 border-b border-gray-200">
+                  {/* <div className="px-4 py-2 border-b border-gray-200">
                     <p className="text-sm font-medium text-gray-900">{user?.name || 'Khách'}</p>
                     <p className="text-xs text-gray-500">{user?.email || 'Chưa đăng nhập'}</p>
-                  </div>
-                  <button
+                  </div> */}
+                  {/* <button
                     onClick={() => {
                       setShowUserMenu(false);
                       router.push('/admin/profile');
@@ -94,7 +93,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onSidebarToggle }) => {
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Hồ sơ cá nhân
-                  </button>
+                  </button> */}
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

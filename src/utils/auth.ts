@@ -8,22 +8,27 @@ export class AuthUtils {
   private static readonly SESSION_ID_KEY = 'sessionId';
   private static readonly PERMISSIONS_KEY = 'permissions';
 
-  static setAuth(token: string, user: User): void {
+  static setAuth(token: string, user: User | any): void {
     if (typeof window === 'undefined') return;
+
+    // ✅ FIX: Xử lý cả branchId (camelCase) và branch_id (snake_case)
+    // branchId = 0 là HỢP LỆ (kho tổng), chỉ reject null/undefined
+    const branchId = user.branchId ?? user.branch_id;
 
     const userToStore = {
       id: user.id,
       name: user.name,
       email: user.email,
-      userType: user.userType,
-      roleId: user.roleId,
+      userType: user.userType ?? user.user_type,
+      roleId: user.roleId ?? user.role_id,
       avatar: user.avatar,
-      branchId: user.branchId ?? 0, // Đảm bảo branchId không bao giờ là undefined
+      branchId: branchId !== undefined && branchId !== null ? branchId : null,
       loginTime: new Date().getTime()
     };
 
-    console.log('💾 userToStore before saving:', JSON.stringify(userToStore, null, 2));
-    console.log('💾 branchId before saving:', userToStore.branchId, typeof userToStore.branchId);
+    // ✅ Log để debug
+    console.log('💾 Saving user with branchId:', branchId, '(0 = Kho tổng)');
+    console.log('📦 Full user data:', userToStore);
 
     const sessionId = this.generateSessionId();
 
@@ -33,14 +38,6 @@ export class AuthUtils {
     
     sessionStorage.setItem(this.SESSION_ID_KEY, sessionId);
     localStorage.setItem(this.SESSION_ID_KEY, sessionId);
-
-    const savedUserStr = localStorage.getItem(this.USER_KEY);
-    console.log('💾 Saved to localStorage (raw):', savedUserStr);
-    if (savedUserStr) {
-      const savedUser = JSON.parse(savedUserStr);
-      console.log('💾 Parsed localStorage user:', JSON.stringify(savedUser, null, 2));
-      console.log('💾 branchId in localStorage:', savedUser.branchId, typeof savedUser.branchId);
-    }
   }
 
   static setPermissions(permissions: Permission[]): void {
@@ -79,6 +76,24 @@ export class AuthUtils {
     return permissions.some(p => p.slug === slug);
   }
 
+  static hasAnyPermission(slugs: string[]): boolean {
+    const permissions = this.getPermissions();
+    if (!permissions) return false;
+    return slugs.some(slug => permissions.some(p => p.slug === slug));
+  }
+
+  static hasAllPermissions(slugs: string[]): boolean {
+    const permissions = this.getPermissions();
+    if (!permissions) return false;
+    return slugs.every(slug => permissions.some(p => p.slug === slug));
+  }
+
+  static getPermissionSlugs(): string[] {
+    const permissions = this.getPermissions();
+    if (!permissions) return [];
+    return permissions.map(p => p.slug);
+  }
+
   private static generateSessionId(): string {
     return `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   }
@@ -88,12 +103,6 @@ export class AuthUtils {
     
     const sessionStorageId = sessionStorage.getItem(this.SESSION_ID_KEY);
     const localStorageId = localStorage.getItem(this.SESSION_ID_KEY);
-    
-    console.log('🔎 Session validation:', {
-      sessionStorageId,
-      localStorageId,
-      isValid: sessionStorageId === localStorageId
-    });
     
     if (!sessionStorageId) {
       return false;
@@ -122,12 +131,13 @@ export class AuthUtils {
     }
     
     const userStr = localStorage.getItem(this.USER_KEY);
-    console.log('📖 Raw user from localStorage:', userStr);
     if (userStr) {
       try {
         const parsedUser = JSON.parse(userStr) as User;
-        console.log('📖 Parsed user:', JSON.stringify(parsedUser, null, 2));
-        console.log('📖 branchId from parsed user:', parsedUser.branchId, typeof parsedUser.branchId);
+        
+        // ✅ Log để debug
+        console.log('👤 Getting user - branchId:', parsedUser.branchId, '(0 = Kho tổng)');
+        
         return parsedUser;
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -184,5 +194,30 @@ export class AuthUtils {
 
   static isAdmin(): boolean {
     return this.hasUserType(2);
+  }
+
+  // ✅ THÊM: Helper để lấy branchId an toàn
+  // branchId = 0 là hợp lệ (kho tổng), chỉ reject null/undefined
+  static getBranchId(): number | null {
+    const user = this.getUser();
+    if (!user) {
+      console.warn('⚠️ No user found');
+      return null;
+    }
+    
+    // branchId có thể là 0 (kho tổng) - đây là giá trị hợp lệ
+    if (user.branchId === undefined || user.branchId === null) {
+      console.warn('⚠️ No branchId found for user');
+      return null;
+    }
+    
+    console.log('✅ branchId:', user.branchId, user.branchId === 0 ? '(Kho tổng)' : '');
+    return user.branchId;
+  }
+
+  // ✅ THÊM: Kiểm tra có phải trưởng kho tổng không
+  static isMainWarehouse(): boolean {
+    const branchId = this.getBranchId();
+    return branchId === 0;
   }
 }

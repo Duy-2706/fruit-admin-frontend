@@ -36,7 +36,7 @@ export function useBranchStock() {
         }
         return fetchBranchStock(updatedUser!.branchId);
       }
-      const response = await ApiHelper.get<BranchStock[]>(`api/v1/inventory/branches/${branchId}`);
+      const response = await ApiHelper.get<BranchStock[]>(`api/v1/inventory/branches/${branchId}/stock`);
       if (response.success && response.data) {
         setBranchStock(Array.isArray(response.data) ? response.data : []);
       } else {

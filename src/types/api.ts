@@ -9,6 +9,13 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   errors?: Record<string, string[]>;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    currentPage: number;
+    totalPages: number;
+  };
 }
 
 export interface PaginatedResponse<T> {

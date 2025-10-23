@@ -1,54 +1,112 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CustomTable from '@/components/ui/CustomTable';
 import RoleModal from '@/components/pages/RoleModel';
-import { ApiHelper } from '@/utils/api';
-import { AuthUtils } from '@/utils/auth';
+import AssignPermissionModal from '@/components/pages/AssignPermissionModal';
+import { useRoles } from '@/hooks/useRole';
 import { Role, CreateRoleRequest } from '@/types/role';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function RoleManagementPage() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    currentRoles,
+    loading,
+    currentPage,
+    searchQuery,
+    filteredRoles,
+    roles,
+    totalPages,
+    setSearchQuery,
+    setCurrentPage,
+    createRole,
+    updateRole,
+    deleteRole,
+    assignPermissionToRole
+  } = useRoles();
+
+        const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý vai trò' }
+  ];
+
   const [showModal, setShowModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [formData, setFormData] = useState<CreateRoleRequest>({
     name: '',
     slug: '',
     description: null
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 10;
 
-  const fetchRoles = async () => {
-    setLoading(true);
-    try {
-      if (!AuthUtils.isAuthenticated()) {
-        alert('Vui lòng đăng nhập để xem trang này');
-        window.location.href = '/login';
-        return;
-      }
+  const resetForm = () => {
+    setEditingRole(null);
+    setFormData({
+      name: '',
+      slug: '',
+      description: null
+    });
+  };
 
-      const response = await ApiHelper.get<Role[]>('api/v1/roles');
-      
-      if (response.success && response.data) {
-        const rolesData = Array.isArray(response.data) ? response.data : [];
-        setRoles(rolesData);
-      } else {
-        console.error('Error fetching roles:', response.message);
-        alert(response.message || 'Không thể tải dữ liệu vai trò');
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-      alert('Lỗi khi tải vai trò');
-    } finally {
-      setLoading(false);
+  const handleEdit = (role: Role) => {
+    if (!role || !role.id) {
+      alert('Dữ liệu vai trò không hợp lệ');
+      return;
+    }
+    
+    setEditingRole(role);
+    setFormData({
+      name: role.name || '',
+      slug: role.slug || '',
+      description: role.description || null
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const success = editingRole
+      ? await updateRole(editingRole.id, formData)
+      : await createRole(formData);
+
+    if (success) {
+      setShowModal(false);
+      resetForm();
     }
   };
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Auto-generate slug from name when creating new role
+    if (name === 'name' && !editingRole) {
+      const slug = value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      
+      setFormData(prev => ({
+        ...prev,
+        slug: slug
+      }));
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    resetForm();
+  };
 
   const columns = [
     { 
@@ -112,7 +170,7 @@ export default function RoleManagementPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row);
+              deleteRole(row);
             }}
             className="text-red-600 hover:text-red-800"
             title="Xóa"
@@ -128,159 +186,9 @@ export default function RoleManagementPage() {
     }
   ];
 
-  const handleEdit = (role: Role) => {
-    if (!role || !role.id) {
-      console.error('Invalid role data:', role);
-      alert('Dữ liệu vai trò không hợp lệ');
-      return;
-    }
-    
-    console.log('Editing role:', role);
-    setEditingRole(role);
-    setFormData({
-      name: role.name || '',
-      slug: role.slug || '',
-      description: role.description || null
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (role: Role) => {
-    if (!role || !role.id) {
-      console.error('Invalid role data:', role);
-      alert('Dữ liệu vai trò không hợp lệ');
-      return;
-    }
-    
-    if (!confirm(`Bạn có chắc muốn xóa vai trò "${role.name}"?`)) return;
-
-    try {
-      const response = await ApiHelper.delete(`api/v1/roles/${role.id}`);
-      if (response.success) {
-        alert('Xóa vai trò thành công!');
-        fetchRoles();
-      } else {
-        alert('Lỗi: ' + (response.message || 'Không thể xóa vai trò'));
-      }
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      alert('Lỗi: ' + error.message);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      let response;
-      if (editingRole) {
-        const updateData: any = {
-          name: formData.name,
-          slug: formData.slug
-        };
-        
-        if (formData.description && formData.description.trim() !== '') {
-          updateData.description = formData.description;
-        }
-        
-        console.log('Updating role ID:', editingRole.id);
-        console.log('Update data:', JSON.stringify(updateData, null, 2));
-        
-        response = await ApiHelper.patch(`api/v1/roles/${editingRole.id}`, updateData);
-        console.log('Update response:', response);
-      } else {
-        console.log('Creating role:', formData);
-        response = await ApiHelper.post('api/v1/roles', formData);
-        console.log('Create response:', response);
-      }
-
-      if (response.success) {
-        alert(editingRole ? 'Cập nhật thành công!' : 'Thêm vai trò thành công!');
-        setShowModal(false);
-        setEditingRole(null);
-        setFormData({
-          name: '',
-          slug: '',
-          description: null
-        });
-        fetchRoles();
-      } else {
-        console.error('API Error:', response);
-        alert('Lỗi: ' + (response.message || 'Không thể lưu vai trò'));
-      }
-    } catch (error: any) {
-      console.error('Submit error:', error);
-      alert('Lỗi: ' + error.message);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Auto-generate slug from name
-    if (name === 'name' && !editingRole) {
-      const slug = value
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
-        .replace(/[^a-z0-9\s-]/g, '')
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
-      
-      setFormData(prev => ({
-        ...prev,
-        slug: slug
-      }));
-    }
-  };
-
-  const resetForm = () => {
-    setEditingRole(null);
-    setFormData({
-      name: '',
-      slug: '',
-      description: null
-    });
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    resetForm();
-  };
-
-  // Filter roles based on search query
-  const filteredRoles = roles.filter(role => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
-    
-    return (
-      role.name.toLowerCase().includes(query) ||
-      role.slug.toLowerCase().includes(query) ||
-      (role.description && role.description.toLowerCase().includes(query))
-    );
-  });
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentRoles = filteredRoles.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredRoles.length / itemsPerPage);
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-  // Reset to page 1 when search query changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
   return (
     <div className="space-y-6">
+        <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between gap-4">
@@ -319,6 +227,18 @@ export default function RoleManagementPage() {
                   </button>
                 )}
               </div>
+              
+              {/* ✅ Nút Gán quyền */}
+              <button
+                onClick={() => setShowAssignModal(true)}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap flex items-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Gán quyền
+              </button>
+
               <button
                 onClick={() => {
                   resetForm();
@@ -351,7 +271,7 @@ export default function RoleManagementPage() {
           </span>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => paginate(currentPage - 1)}
+              onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
               className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Trang trước"
@@ -365,7 +285,7 @@ export default function RoleManagementPage() {
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  onClick={() => paginate(page)}
+                  onClick={() => setCurrentPage(page)}
                   className={`min-w-[36px] px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                     currentPage === page
                       ? 'bg-gray-700 text-white'
@@ -378,7 +298,7 @@ export default function RoleManagementPage() {
             </div>
 
             <button
-              onClick={() => paginate(currentPage + 1)}
+              onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Trang sau"
@@ -391,6 +311,7 @@ export default function RoleManagementPage() {
         </div>
       </div>
 
+      {/* Modal thêm/sửa vai trò */}
       <RoleModal
         showModal={showModal}
         editingRole={editingRole}
@@ -398,6 +319,13 @@ export default function RoleManagementPage() {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         onInputChange={handleInputChange}
+      />
+
+      {/* ✅ Modal gán quyền */}
+      <AssignPermissionModal
+        showModal={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        onSubmit={assignPermissionToRole}
       />
     </div>
   );

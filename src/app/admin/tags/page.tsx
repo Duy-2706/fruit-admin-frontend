@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import TagHeader, { TagTable } from '@/components/PageLayout/tags/TagHeader';
+import TagHeader, { TagTable } from '@/components/PageLayout/tags/TagLayout';
 import TagModal from '@/components/pages/TagModel';
 import { useTags } from '@/hooks/useTag';
 import { Tag, CreateTagRequest } from '@/types/tag';

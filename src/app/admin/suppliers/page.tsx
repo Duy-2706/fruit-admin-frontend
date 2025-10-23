@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import SupplierHeader, { SupplierTable } from '@/components/PageLayout/suppliers/SupplierHeader';
+import SupplierHeader, { SupplierTable } from '@/components/PageLayout/suppliers/SupplierLayout';
 import SupplierModal from '@/components/pages/SupplierModel';
 import { useSuppliers } from '@/hooks/useSupplier';
 import { Supplier, CreateSupplierRequest } from '@/types/supplier';

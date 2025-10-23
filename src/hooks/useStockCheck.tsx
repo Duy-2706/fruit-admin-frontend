@@ -45,7 +45,7 @@ export function useStockChecks() {
   // Fetch tồn kho của chi nhánh
   const fetchBranchStock = async (branchId: number) => {
     try {
-      const response = await ApiHelper.get<BranchStock[]>(`api/v1/inventory/branches/${branchId}`);
+      const response = await ApiHelper.get<BranchStock[]>(`api/v1/inventory/branches/${branchId}/stock`);
       
       if (response.success && response.data) {
         setBranchStock(Array.isArray(response.data) ? response.data : []);

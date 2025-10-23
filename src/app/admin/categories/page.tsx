@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import CategoryHeader, { CategoryTable } from '@/components/PageLayout/categories/CategoryHeader';
+import CategoryHeader, { CategoryTable } from '@/components/PageLayout/categories/CategoryLayout';
 import CategoryModal from '@/components/pages/CategoryModel';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import { useCategories } from '@/hooks/useCategory';

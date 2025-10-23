@@ -4,6 +4,7 @@ import StockCheckHeader from '@/components/PageLayout/inventory/StockCheckHeader
 import { StockCheckTable } from '@/components/PageLayout/inventory/StockCheckTable';
 import { useStockChecks } from '@/hooks/useStockCheck';
 import { StockCheck } from '@/types/inventory';
+import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export default function StockChecksPage() {
   const {
@@ -22,6 +23,12 @@ export default function StockChecksPage() {
     cancelStockCheck
   } = useStockChecks();
 
+      const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Kiểm kho' }
+  ];
+
   const handleComplete = async (check: StockCheck) => {
     if (!confirm(`Hoàn thành phiếu kiểm #${check.id}? Tồn kho sẽ được cập nhật.`)) return;
     await completeStockCheck(check.id);
@@ -39,6 +46,7 @@ export default function StockChecksPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <StockCheckHeader
           totalCount={stockChecks.length}

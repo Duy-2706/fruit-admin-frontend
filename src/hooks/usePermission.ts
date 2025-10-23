@@ -1,7 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Permission, CreatePermissionRequest } from '@/types/permission';
-import { PermissionService } from '@/services/permissionService';
 import { AuthUtils } from '@/utils/auth';
 import { ApiHelper } from '@/utils/api';
 
@@ -11,6 +10,10 @@ declare global {
   }
 }
 
+/**
+ * Hook để quản lý TẤT CẢ permissions (trang admin)
+ * Không phụ thuộc vào roleId của user
+ */
 export function usePermissions() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +33,7 @@ export function usePermissions() {
     }
   }, []);
 
-
-
-   const fetchPermissions = async () => {
+  const fetchPermissions = async () => {
     setLoading(true);
     try {
       if (!AuthUtils.isAuthenticated()) {
@@ -40,10 +41,13 @@ export function usePermissions() {
         window.location.href = '/login';
         return;
       }
-      
+
+      // ✅ Lấy TẤT CẢ permissions để quản lý (không theo roleId)
+      console.log('🔄 Fetching ALL permissions for management...');
       const response = await ApiHelper.get<Permission[]>('api/v1/permissions');
       
       if (response.success && response.data) {
+        console.log('✅ All permissions loaded:', response.data.length, 'items');
         setPermissions(Array.isArray(response.data) ? response.data : []);
       } else {
         alert(response.message || 'Không thể tải dữ liệu quyền');
@@ -56,7 +60,7 @@ export function usePermissions() {
     }
   };
 
- const deletePermission = async (permission: Permission) => {
+  const deletePermission = async (permission: Permission) => {
     if (!permission || !permission.id) {
       alert('Dữ liệu quyền không hợp lệ');
       return;
@@ -70,7 +74,7 @@ export function usePermissions() {
         alert('Xóa quyền thành công!');
         fetchPermissions();
       } else {
-        alert('Lỗi: ' + (response.message || 'Không thể xóa nhà cung cấp'));
+        alert('Lỗi: ' + (response.message || 'Không thể xóa quyền'));
       }
     } catch (error: any) {
       console.error('Delete error:', error);
@@ -96,7 +100,6 @@ export function usePermissions() {
     } catch (error: any) {
       console.error('Create error:', error);
 
-      // 🧩 Kiểm tra lỗi HTML từ server
       const rawError = error?.message || '';
 
       if (
@@ -129,7 +132,7 @@ export function usePermissions() {
         fetchPermissions();
         return true;
       }
-      alert('Lỗi: ' + (response.message || 'Không thể lưu nhà cung cấp'));
+      alert('Lỗi: ' + (response.message || 'Không thể cập nhật quyền'));
       return false;
     } catch (error: any) {
       console.error('Update error:', error);
@@ -144,13 +147,13 @@ export function usePermissions() {
       return;
     }
 
-   const exportData = filteredPermissions.map(permission => {
+    const exportData = filteredPermissions.map(permission => {
       return {
-      'ID': permission.id,
-      'Tên Quyền': permission.name,
-      'Slug': permission.slug,
-      'Mô tả': permission.description || '',
-      'Ngày tạo': new Date(permission.created_at).toLocaleDateString('vi-VN')
+        'ID': permission.id,
+        'Tên Quyền': permission.name,
+        'Slug': permission.slug,
+        'Mô tả': permission.description || '',
+        'Ngày tạo': new Date(permission.created_at).toLocaleDateString('vi-VN')
       };
     });
 
@@ -162,7 +165,7 @@ export function usePermissions() {
       { wch: 8 },   // ID
       { wch: 30 },  // Tên Quyền
       { wch: 30 },  // Slug
-      { wch: 60 },  // Email
+      { wch: 60 },  // Mô tả
       { wch: 12 }   // Ngày tạo
     ];
     worksheet['!cols'] = colWidths;
@@ -195,11 +198,11 @@ export function usePermissions() {
         
         const importedPermissions = jsonData.map((row: any) => ({
           name: row['Tên Quyền'] || '',
-          slug: row['Định danh'] || '',
-          description: row['Description'] || null,
+          slug: row['Slug'] || '',
+          description: row['Mô tả'] || null,
         }));
 
-        if (!confirm(`Bạn có muốn import ${importedPermissions.length} quyềnkhông?`)) {
+        if (!confirm(`Bạn có muốn import ${importedPermissions.length} quyền không?`)) {
           return;
         }
 
@@ -240,8 +243,8 @@ export function usePermissions() {
     
     return (
       permission.name.toLowerCase().includes(query) ||
-      permission.slug.toLowerCase().includes(query) 
-      // (permission.description && permission.permission.toLowerCase().includes(query))
+      permission.slug.toLowerCase().includes(query) ||
+      (permission.description && permission.description.toLowerCase().includes(query))
     );
   });
 
@@ -254,7 +257,6 @@ export function usePermissions() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Fetch permissions on mount
   useEffect(() => {
     fetchPermissions();
   }, []);
@@ -278,5 +280,4 @@ export function usePermissions() {
     handleExportExcel,
     handleImportExcel
   };
-
-};
+}

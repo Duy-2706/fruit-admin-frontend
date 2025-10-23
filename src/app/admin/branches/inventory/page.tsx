@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
-import BranchStockHeader, { BranchStockTable } from '@/components/PageLayout/branches/BranchStockHeader';
+import BranchStockHeader, { BranchStockTable } from '@/components/PageLayout/branches/BranchStockLayout';
 import { useBranchStock } from '@/hooks/useBranchStock';
 import { BranchStock } from '@/types/inventory';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function BranchStockPage() {
   const {
@@ -21,8 +22,15 @@ export default function BranchStockPage() {
     handleExportExcel
   } = useBranchStock();
 
+    const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Tồn kho' }
+  ];
+
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <BranchStockHeader
           totalCount={branchStock.length}

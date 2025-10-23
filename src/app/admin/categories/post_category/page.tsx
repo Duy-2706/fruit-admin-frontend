@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import PostCategoryHeader, { PostCategoryTable } from '@/components/PageLayout/categories/PostCategoryHeader';
+import PostCategoryHeader, { PostCategoryTable } from '@/components/PageLayout/categories/PostCategoryLayout';
 import PostCategoryModal from '@/components/pages/PostCategoryModel';
 import { usePostCategories } from '@/hooks/usePostCategory';
 import { PostCategory, CreatePostCategoryRequest } from '@/types/postCategory';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function PostCategoriesPage() {
   const {
@@ -24,6 +25,12 @@ export default function PostCategoriesPage() {
     handleExportExcel,
     handleImportExcel,
   } = usePostCategories();
+
+    const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý danh mục khuyến mãi' }
+  ];
 
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<PostCategory | null>(null);
@@ -77,6 +84,7 @@ export default function PostCategoriesPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <PostCategoryHeader
           totalCount={categories.length}

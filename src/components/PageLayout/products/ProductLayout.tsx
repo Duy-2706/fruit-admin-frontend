@@ -103,9 +103,16 @@ interface ProductTableProps {
   loading: boolean;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onRowClick?: (product: Product) => void; // New prop for row click
 }
 
-export function ProductTable({ products, loading, onEdit, onDelete }: ProductTableProps) {
+export function ProductTable({ 
+  products, 
+  loading, 
+  onEdit, 
+  onDelete,
+  onRowClick 
+}: ProductTableProps) {
   const columns = [
     { 
       key: 'id', 
@@ -114,7 +121,7 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
       sortable: true,
       className: 'text-center'
     },
-     {
+    {
       key: 'images',
       label: 'ẢNH',
       width: '120px',
@@ -147,11 +154,11 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
       key: 'name', 
       label: 'TÊN SẢN PHẨM',
       sortable: true,
-      className: 'text-left font-medium',
+      className: 'text-center font-medium',
       width: '250px'
     },
     { 
-      key: 'sku', 
+      key: 'slug', 
       label: 'SKU',
       width: '120px',
       sortable: true,
@@ -179,22 +186,6 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
       sortable: true,
       render: (value: string) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(parseFloat(value)),
       className: 'text-right'
-    },
-    { 
-      key: 'stock_quantity', 
-      label: 'KHO',
-      width: '80px',
-      sortable: true,
-      render: (value: number) => (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          value > 50 ? 'bg-green-100 text-green-800' : 
-          value > 10 ? 'bg-yellow-100 text-yellow-800' : 
-          'bg-red-100 text-red-800'
-        }`}>
-          {value}
-        </span>
-      ),
-      className: 'text-center'
     },
     {
       key: 'variants',
@@ -230,8 +221,11 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
       render: (_value: any, row: Product) => (
         <div className="flex justify-center space-x-2">
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit(row); }}
-            className="text-blue-600 hover:text-blue-800"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onEdit(row); 
+            }}
+            className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded transition-colors"
             title="Sửa"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -240,8 +234,11 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
             </svg>
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete(row); }}
-            className="text-red-600 hover:text-red-800"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onDelete(row); 
+            }}
+            className="text-red-600 hover:text-red-800 p-1.5 hover:bg-red-50 rounded transition-colors"
             title="Xóa"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -263,6 +260,8 @@ export function ProductTable({ products, loading, onEdit, onDelete }: ProductTab
       searchable={false}
       actionable={false}
       emptyText="Chưa có sản phẩm nào"
+      onRowClick={onRowClick} // Pass row click handler to CustomTable
+      // rowClassName="cursor-pointer hover:bg-emerald-50 transition-colors" // Add hover effect
     />
   );
 }

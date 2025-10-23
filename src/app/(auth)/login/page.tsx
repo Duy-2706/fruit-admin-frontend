@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff } from 'lucide-react'; // Thêm icon cho hiện/ẩn mật khẩu
+import { Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
@@ -14,7 +15,7 @@ const LoginPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
-  const [showPassword, setShowPassword] = useState(false); // State để hiện/ẩn mật khẩu
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +24,12 @@ const LoginPage: React.FC = () => {
 
     const newErrors: { email?: string; password?: string } = {};
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email là bắt buộc';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = 'Vui lòng nhập email hợp lệ';
     }
     if (!formData.password.trim()) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Mật khẩu là bắt buộc';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -38,14 +39,14 @@ const LoginPage: React.FC = () => {
     }
 
     try {
-      console.log('🚀 Attempting login...');
+      console.log('🚀 Đang đăng nhập...');
       const result = await login({
         email: formData.email,
         password: formData.password,
       });
 
       if (result.success) {
-        console.log('✅ Login successful - Redirecting to /admin');
+        console.log('✅ Đăng nhập thành công - Chuyển hướng đến /admin');
         router.replace('/admin');
       } else {
         if (result.errors) {
@@ -56,7 +57,7 @@ const LoginPage: React.FC = () => {
       }
     } catch (error: any) {
       setErrors({
-        general: error.message || 'An unexpected error occurred',
+        general: error.message || 'Đã xảy ra lỗi không mong muốn',
       });
     } finally {
       setLoading(false);
@@ -87,23 +88,29 @@ const LoginPage: React.FC = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-emerald-50">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* LOGO SECTION */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
+              <Image 
+                src="/images/logo-tamdat.png" 
+                alt="Logo Tâm Đạt" 
+                width={64} 
+                height={64}
+                className="rounded-xl"
+              />
+              
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Login</h1>
-            <p className="text-gray-600 mt-2">Sign in to your account</p>
+            {/* <h1 className="text-3xl font-bold text-gray-900 mb-1">Tâm Đạt</h1> */}
+            <h1 className="text-xl font-bold text-gray-900 mb-1">ĐĂNG NHẬP</h1>
           </div>
 
           {errors.general && (
@@ -120,27 +127,27 @@ const LoginPage: React.FC = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                   errors.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 required
               />
               {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                     errors.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter your password"
+                  placeholder="Nhập mật khẩu"
                   required
                 />
                 <button
@@ -154,24 +161,23 @@ const LoginPage: React.FC = () => {
               {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
             </div>
 
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <label className="flex items-center">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                <input type="checkbox" className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+                <span className="ml-2 text-sm text-gray-600">Ghi nhớ đăng nhập</span>
               </label>
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  console.log('🔗 Forgot password clicked');
-                  // Thêm logic xử lý quên mật khẩu (ví dụ: chuyển hướng hoặc mở modal)
-                  alert('Forgot password functionality to be implemented');
+                  console.log('🔗 Quên mật khẩu được click');
+                  alert('Chức năng quên mật khẩu sẽ được triển khai');
                 }}
-                className="text-sm text-blue-600 hover:text-blue-700 underline"
+                className="text-sm text-green-600 hover:text-green-700 underline font-medium"
               >
-                Forgot Password?
+                Quên mật khẩu?
               </a>
-            </div>
+            </div> */}
 
             <button
               type="submit"
@@ -179,10 +185,10 @@ const LoginPage: React.FC = () => {
               className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-              } transition-colors`}
+                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-lg hover:shadow-xl'
+              } transition-all duration-200`}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
             </button>
           </form>
         </div>

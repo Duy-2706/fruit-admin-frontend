@@ -1,10 +1,11 @@
 
 'use client';
 import React, { useState } from 'react';
-import PermissionHeader, { PermissionTable } from '@/components/PageLayout/permissions/PermissionHeader';
+import PermissionHeader, { PermissionTable } from '@/components/PageLayout/permissions/PermissionLayout';
 import PermissionModal from '@/components/pages/PermissionModel';
 import { usePermissions } from '@/hooks/usePermission';
 import { Permission, CreatePermissionRequest } from '@/types/permission';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function permissionsPage() {
   const {
@@ -25,6 +26,12 @@ export default function permissionsPage() {
     handleExportExcel,
     handleImportExcel
   } = usePermissions();
+
+      const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý quyền hạn' }
+  ];
 
   const [showModal, setShowModal] = useState(false);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
@@ -82,6 +89,7 @@ export default function permissionsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <PermissionHeader
           totalCount={permissions.length}

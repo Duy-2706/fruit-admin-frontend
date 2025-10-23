@@ -3,7 +3,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import './globals.css';
 
 export const metadata = {
-  title: 'Admin Dashboard',
+  title: 'Trang quản trị',
   description: 'Admin panel for managing the application',
 }
 

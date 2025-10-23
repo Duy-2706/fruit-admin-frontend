@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import BranchHeader, { BranchTable } from '@/components/PageLayout/branches/BranchHeader';
+import BranchHeader, { BranchTable } from '@/components/PageLayout/branches/BranchLayout';
 import BranchModal from '@/components/pages/BranchModel';
 import { useBranches } from '@/hooks/useBranch';
 import Breadcrumb from '@/components/layout/Breadcrumb';

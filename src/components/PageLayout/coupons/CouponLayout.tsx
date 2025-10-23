@@ -143,14 +143,14 @@ export function CouponTable({ coupons, loading, onEdit, onDelete }: CouponTableP
     },
     { 
       key: 'description', 
-      label: 'MÔ TÃ',
+      label: 'MÔ TẢ',
       sortable: true,
       render: (value: string | null) => (
         <span className="text-gray-600 text-xs truncate block max-w-[250px]" title={value || ''}>
           {value || '-'}
         </span>
       ),
-      className: 'text-left'
+      className: 'text-center'
     },
     { 
       key: 'type', 

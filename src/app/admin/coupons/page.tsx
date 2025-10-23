@@ -1,9 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import CouponHeader, { CouponTable } from '@/components/PageLayout/coupons/CouponHeader';
+import CouponHeader, { CouponTable } from '@/components/PageLayout/coupons/CouponLayout';
 import CouponModal from '@/components/pages/CouponModel';
 import { useCoupons } from '@/hooks/useCoupon';
 import { Coupon, CreateCouponRequest } from '@/types/coupon';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function CouponsPage() {
   const {
@@ -24,6 +25,12 @@ export default function CouponsPage() {
     handleExportExcel,
     handleImportExcel
   } = useCoupons();
+  
+    const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý khuyến mãi' }
+  ];
 
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -138,6 +145,7 @@ export default function CouponsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <CouponHeader
           totalCount={coupons.length}

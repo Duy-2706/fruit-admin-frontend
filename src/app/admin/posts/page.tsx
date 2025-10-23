@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import PostHeader, { PostTable } from '@/components/PageLayout/posts/PostHeader';
+import PostHeader, { PostTable } from '@/components/PageLayout/posts/PostLayout';
 import PostModal from '@/components/pages/PostModel';
 import { usePosts } from '@/hooks/usePost';
 import { Post, CreatePostRequest } from '@/types/post';
+import Breadcrumb from '@/components/layout/Breadcrumb';
 
 export default function PostsPage() {
   const {
@@ -25,6 +26,12 @@ export default function PostsPage() {
     handleExportExcel,
     handleImportExcel,
   } = usePosts();
+
+    const breadcrumbItems = [
+    { label: 'Dashboard', href: '/admin' },
+    { label: 'Cài đặt' },
+    { label: 'Quản lý bài viết' }
+  ];
 
   const [showModal, setShowModal] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -101,6 +108,7 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} />
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <PostHeader
           totalCount={posts.length}
