@@ -1,6 +1,16 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Product, ProductVariant } from '@/types/product';
+// Đảm bảo kiểu Product của bạn đã được cập nhật
+// BÊN TRONG FILE @/types/product
+// export interface Product {
+//   ...
+//   images: {
+//     thumbnail?: string;
+//     gallery?: string[];
+//   };
+//   ...
+// }
+import { Product, ProductVariant } from '@/types/product'; 
 import { ApiHelper } from '@/utils/api';
 
 interface ProductDetailModalProps {
@@ -21,6 +31,9 @@ export default function ProductDetailModal({
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
+  
+  // --- THÊM STATE MỚI ĐỂ LƯU TẤT CẢ ẢNH PHỤ ---
+  const [allImages, setAllImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen && productId) {
@@ -28,6 +41,7 @@ export default function ProductDetailModal({
     } else {
       setProduct(null);
       setSelectedImage('');
+      setAllImages([]); // <-- Xóa danh sách ảnh phụ khi đóng
     }
   }, [isOpen, productId]);
 
@@ -38,9 +52,40 @@ export default function ProductDetailModal({
       const response = await ApiHelper.get<Product>(`api/v1/products/${productId}`);
       if (response.success && response.data) {
         setProduct(response.data);
-        if (response.data.images && response.data.images.length > 0) {
-          setSelectedImage(response.data.images[0]);
+
+        // --- BẮT ĐẦU LOGIC XỬ LÝ ẢNH MỚI ---
+        const imagesData = response.data.images; // images giờ là object { thumbnail, gallery }
+        let mainImg = '';
+        let galleryImgs: string[] = [];
+
+        if (imagesData) {
+          // 1. Lấy thumbnail làm ảnh chính (nếu có) và thêm vào danh sách ảnh phụ
+          if (imagesData.thumbnail && imagesData.thumbnail.trim() !== '') {
+            mainImg = imagesData.thumbnail;
+            galleryImgs.push(imagesData.thumbnail);
+          }
+
+          // 2. Thêm tất cả ảnh gallery vào danh sách ảnh phụ
+          if (imagesData.gallery && Array.isArray(imagesData.gallery)) {
+            galleryImgs = [
+              ...galleryImgs, 
+              ...imagesData.gallery.filter(img => img && img.trim() !== '')
+            ];
+          }
+
+          // 3. Nếu không có thumbnail, lấy ảnh gallery đầu tiên làm ảnh chính
+          if (!mainImg && galleryImgs.length > 0) {
+            mainImg = galleryImgs[0];
+          }
         }
+
+        // 4. Cập nhật state
+        // Đặt ảnh chính, nếu không có ảnh nào thì dùng ảnh mặc định
+        setSelectedImage(mainImg || '/placeholder-image.png'); 
+        // Đặt danh sách ảnh phụ
+        setAllImages(galleryImgs); 
+        // --- KẾT THÚC LOGIC XỬ LÝ ẢNH MỚI ---
+
       }
     } catch (error) {
       console.error('Error fetching product detail:', error);
@@ -119,9 +164,10 @@ export default function ProductDetailModal({
                     />
                   </div>
 
-                  {product.images && product.images.length > 1 && (
+                  {/* --- SỬA LOGIC RENDER ẢNH PHỤ --- */}
+                  {allImages.length > 1 && (
                     <div className="grid grid-cols-5 gap-2">
-                      {product.images.map((img, index) => (
+                      {allImages.map((img, index) => (
                         <button
                           key={index}
                           onClick={() => setSelectedImage(img)}
@@ -135,11 +181,13 @@ export default function ProductDetailModal({
                             src={img}
                             alt={`${product.name} ${index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }}
                           />
                         </button>
                       ))}
                     </div>
                   )}
+                  {/* --- KẾT THÚC SỬA --- */}
 
                   {/* Status Badges */}
                   <div className="flex flex-wrap gap-2 justify-center">

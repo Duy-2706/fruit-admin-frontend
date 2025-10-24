@@ -7,7 +7,10 @@ export interface ProductVariant {
   weight: number;
   image: string | null;
 }
-
+export interface ProductImageStructure {
+  thumbnail: string;
+  gallery: string[];
+}
 export interface Product {
   id: string;
   name: string;
@@ -16,7 +19,10 @@ export interface Product {
   category_id: string;
   unit_id: string;
   description: string;
-  images: string[];
+  images: {
+    thumbnail?: string; // Cho phép thumbnail là optional khi nhận từ API
+    gallery?: string[]; // Cho phép gallery là optional khi nhận từ API
+  };
   price: string;
   stock_quantity: number;
   is_active: boolean;
@@ -80,7 +86,7 @@ export interface CreateProductRequest {
   origin: string;
   is_active: boolean;
   is_featured: boolean;
-  images?: string[];  // Array of URLs
+  images?: ProductImageStructure;  // Array of URLs
   specifications?: any;
   compare_price?: number;
   cost_price?: number;
@@ -104,7 +110,7 @@ export interface UpdateProductRequest {
   origin?: string;
   is_active?: boolean;
   is_featured?: boolean;
-  images?: string[];
+  images?: ProductImageStructure;
   specifications?: any;
   compare_price?: number;
   cost_price?: number;

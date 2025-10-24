@@ -6,13 +6,16 @@ import { Product, Category, Unit, CreateProductRequest } from '@/types/product';
 interface ProductModalProps {
   showModal: boolean;
   editingProduct: Product | null;
-  formData: CreateProductRequest;
+  formData: CreateProductRequest; // Giả định CreateProductRequest có images: { thumbnail: string, gallery: string[] }
   categories: Category[];
   units: Unit[];
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  onImagesChange: (urls: string | string[]) => void;
+  // --- THAY ĐỔI PROPS ---
+  onThumbnailChange: (url: string) => void;
+  onGalleryChange: (urls: string[]) => void;
+  // --- KẾT THÚC THAY ĐỔI PROPS ---
 }
 
 export default function ProductModal({
@@ -24,9 +27,16 @@ export default function ProductModal({
   onClose,
   onSubmit,
   onInputChange,
-  onImagesChange
+  // --- THAY ĐỔI PROPS ---
+  onThumbnailChange,
+  onGalleryChange
+  // --- KẾT THÚC THAY ĐỔI PROPS ---
 }: ProductModalProps) {
   if (!showModal) return null;
+
+  // Lấy giá trị an toàn, phòng trường hợp formData.images là null hoặc không đúng định dạng
+  const thumbnail = (formData.images && (formData.images as any).thumbnail) || '';
+  const gallery = (formData.images && (formData.images as any).gallery) || [];
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -116,17 +126,33 @@ export default function ProductModal({
             </div>
           </div>
 
-          {/* Hình ảnh */}
-          <div>
+          {/* --- THAY ĐỔI PHẦN HÌNH ẢNH --- */}
+          <div className="space-y-4">
             <ImageUpload
-              value={formData.images || []}
-              onChange={onImagesChange}
+              value={thumbnail ? [thumbnail] : []} // ImageUpload nhận 1 mảng
+              onChange={(urls) => onThumbnailChange(urls[0] || '')} // Lấy phần tử đầu tiên
+              folder="products"
+              multiple={false}
+              maxFiles={1}
+              label="Ảnh chính (Thumbnail)"
+            />
+            <ImageUpload
+              value={gallery} // Truyền mảng gallery
+              onChange={(urlOrUrls) => {
+                // Normalize incoming value (string | string[]) to string[] for onGalleryChange
+                if (Array.isArray(urlOrUrls)) {
+                  onGalleryChange(urlOrUrls);
+                } else {
+                  onGalleryChange(urlOrUrls ? [urlOrUrls] : []);
+                }
+              }}
               folder="products"
               multiple={true}
               maxFiles={5}
-              label="Hình ảnh sản phẩm"
+              label="Ảnh phụ (Gallery)"
             />
           </div>
+          {/* --- KẾT THÚC THAY ĐỔI HÌNH ẢNH --- */}
 
           {/* Giá */}
           <div className="grid grid-cols-3 gap-4">
