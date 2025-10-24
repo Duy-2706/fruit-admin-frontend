@@ -98,12 +98,19 @@ export default function ProductHeader({
 }
 
 // ProductTable Component
+// ProductTable Component
 interface ProductTableProps {
   products: Product[];
   loading: boolean;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onRowClick?: (product: Product) => void; // New prop for row click
+}
+
+// Định nghĩa kiểu dữ liệu cho images object mới
+interface ProductImages {
+  thumbnail?: string;
+  gallery?: string[];
 }
 
 export function ProductTable({ 
@@ -126,28 +133,46 @@ export function ProductTable({
       label: 'ẢNH',
       width: '120px',
       sortable: false,
-      render: (value: string[]) => (
-        value && value.length > 0 ? (
-          <div className="flex justify-center">
-            <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-              <img 
-                src={value[0]} 
-                alt="Product" 
-                className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder-image.png';
-                }}
-              />
+      // --- PHẦN SỬA ĐỔI BẮT ĐẦU TỪ ĐÂY ---
+      render: (value: ProductImages) => { // 'value' giờ là object { thumbnail, gallery }
+        let imageUrl = ''; // Biến để giữ URL ảnh cần hiển thị
+
+        if (value) {
+          // Ưu tiên lấy ảnh đầu tiên từ 'gallery' (theo yêu cầu của bạn)
+          if (value.gallery && value.gallery.length > 0 && value.gallery[0]) {
+            imageUrl = value.gallery[0];
+          } 
+          // Nếu 'gallery' rỗng, dùng 'thumbnail' làm ảnh dự phòng
+          else if (value.thumbnail) {
+            imageUrl = value.thumbnail;
+          }
+        }
+
+        // Render ảnh nếu có URL, ngược lại render placeholder
+        return (
+          imageUrl ? (
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                <img 
+                  src={imageUrl} // Sử dụng URL đã tìm thấy
+                  alt="Product" 
+                  className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-image.png';
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center border border-gray-300">
-              <span className="text-gray-400 text-xs">No img</span>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center border border-gray-300">
+                <span className="text-gray-400 text-xs">No img</span>
+              </div>
             </div>
-          </div>
-        )
-      ),
+          )
+        );
+      },
+      // --- PHẦN SỬA ĐỔI KẾT THÚC ---
       className: 'text-center'
     },
     { 
